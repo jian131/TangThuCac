@@ -1,29 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Tầng Thư Các</string>
+    <string name="home">Trang chủ</string>
+    <string name="library">Thư viện</string>
+    <string name="discover">Khám phá</string>
+    <string name="profile">Hồ sơ</string>
+    <string name="ai_chat">AI trợ giúp</string>
+    <string name="login">Đăng nhập</string>
+    <string name="register">Đăng ký</string>
+    <string name="email">Email</string>
+    <string name="password">Mật khẩu</string>
+    <string name="search_hint">Tìm kiếm truyện...</string>
+    <string name="favorite">Yêu thích</string>
+    <string name="read">Đọc truyện</string>
+    <string name="listen">Nghe đọc</string>
+
+    <!-- Navigation strings -->
     <string name="navigation_home">Trang chủ</string>
     <string name="navigation_library">Thư viện</string>
     <string name="navigation_genres">Thể loại</string>
-    <string name="navigation_user">Tài khoản</string>
-    <string name="search_hint">Tìm kiếm truyện...</string>
-    <string name="no_internet_connection">Không có kết nối internet</string>
-    <string name="login_required">Vui lòng đăng nhập để sử dụng tính năng này</string>
-    <string name="login">Đăng nhập</string>
-    <string name="signup">Đăng ký</string>
-    <string name="email">Email</string>
-    <string name="password">Mật khẩu</string>
-    <string name="repassword">Nhập lại mật khẩu</string>
-    <string name="logout">Đăng xuất</string>
-    <string name="save_story">Lưu truyện</string>
-    <string name="read_story">Đọc truyện</string>
-    <string name="chapters_list">Danh sách chương</string>
-    <string name="previous">Trước</string>
-    <string name="next">Tiếp</string>
-    <string name="play">Đọc</string>
-    <string name="stop">Dừng</string>
-    <string name="tts_settings">Cài đặt TTS</string>
-    <string name="ask_ai">Hỏi AI trợ giúp</string>
-    <string name="send">Gửi</string>
-    <string name="dark_mode">Chế độ tối</string>
-    <string name="default_web_client_id">144054249267-43d7b3iul9rgj85bf431l112mb35mbnm.apps.googleusercontent.com</string>
+    <string name="navigation_user">Cá nhân</string>
+
 </resources>
