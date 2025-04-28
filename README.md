@@ -8,12 +8,6 @@ Tầng Thư Các là ứng dụng đọc truyện cho phép người dùng:
 - Tìm kiếm và khám phá truyện mới
 - Trao đổi với AI trợ giúp
 
-## Cách cài đặt
-1. Clone repository này
-2. Mở dự án trong Android Studio
-3. Thêm file `google-services.json` vào thư mục app
-4. Build và chạy ứng dụng
-
 ## Công nghệ sử dụng
 - Firebase Authentication: Quản lý đăng nhập, đăng ký
 - Firebase Realtime Database: Lưu trữ dữ liệu truyện và thông tin người dùng
@@ -36,4 +30,4 @@ Tầng Thư Các là ứng dụng đọc truyện cho phép người dùng:
 - Kết nối internet
 
 ## Thông tin liên hệ
-Liên hệ: [example@email.com](mailto:example@email.com)
+Liên hệ: [dawndawn335@gmail.com](mailto:example@email.com)
