@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.API;
 
 import com.jian.tangthucac.model.Story;
@@ -25,10 +24,10 @@ public interface ApiService {
     @GET("stories/{id}.json")
     Call<Story> getStoryById(@Path("id") String storyId);
 
-    @GET("stories.json?orderBy="genre"&equalTo="{genre}"")
+    @GET("stories.json?orderBy=\"genre\"&equalTo=\"{genre}\"")
     Call<Map<String, Story>> getStoriesByGenre(@Path("genre") String genre);
 
-    @GET("stories.json?orderBy="hot"&equalTo=true")
+    @GET("stories.json?orderBy=\"hot\"&equalTo=true")
     Call<Map<String, Story>> getHotStories();
 
     @GET("stories/{id}/chapters.json")
