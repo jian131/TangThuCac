@@ -125,6 +125,42 @@ public class StoryDetailActivity extends AppCompatActivity {
         });
 
         return chapters;
+    }
+        List<Chapter> chapters = new ArrayList<>(chaptersMap.values());
+
+        Collections.sort(chapters, new Comparator<Chapter>() {
+            @Override
+            public int compare(Chapter c1, Chapter c2) {
+                try {
+                    // Extract number from keys like "chapter1", "chapter2", etc.
+                    String key1 = getKeyForChapter(chaptersMap, c1).replace("chapter", "");
+                    String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
+                    return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
+                } catch (NumberFormatException e) {
+                    return 0; // If parsing fails, maintain original order
+                }
+            }
+        });
+
+        return chapters;
+    }
+        List<Chapter> chapters = new ArrayList<>(chaptersMap.values());
+
+        Collections.sort(chapters, new Comparator<Chapter>() {
+            @Override
+            public int compare(Chapter c1, Chapter c2) {
+                try {
+                    // Extract number from keys like "chapter1", "chapter2", etc.
+                    String key1 = getKeyForChapter(chaptersMap, c1).replace("chapter", "");
+                    String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
+                    return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
+                } catch (NumberFormatException e) {
+                    return 0; // If parsing fails, maintain original order
+                }
+            }
+        });
+
+        return chapters;
     } catch (NumberFormatException e) {
                     return 0; // If parsing fails, maintain original order
                 }
