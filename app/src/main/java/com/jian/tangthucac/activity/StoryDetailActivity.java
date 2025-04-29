@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.activity;
 
 import android.content.Intent;
@@ -7,7 +6,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -26,7 +24,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -69,15 +66,18 @@ public class StoryDetailActivity extends AppCompatActivity {
                 storyTitle.setText(story.getTitle());
                 storyAuthor.setText("Tác giả: " + story.getAuthor());
                 storyViews.setText("Lượt xem: " + story.getViews());
+
                 String imageUrl = story.getImage();
                 if (imageUrl != null && !imageUrl.isEmpty()) {
-                    Glide.with(this).load(imageUrl).placeholder(R.drawable.loading_placeholder).error(R.drawable.error_image).into(storyImage);
+                    Glide.with(this).load(imageUrl)
+                        .placeholder(R.drawable.loading_placeholder)
+                        .error(R.drawable.error_image)
+                        .into(storyImage);
                 } else {
                     storyImage.setImageResource(R.drawable.default_cover);
                 }
 
                 // Get and sort chapters
-                // Get chapters safely with null check
                 chapterList = getSortedChapters(story.getChapters());
 
                 // Setup adapter with sorted chapters
@@ -104,7 +104,7 @@ public class StoryDetailActivity extends AppCompatActivity {
         }
     }
 
-        private List<Chapter> getSortedChapters(Map<String, Chapter> chaptersMap) {
+    private List<Chapter> getSortedChapters(Map<String, Chapter> chaptersMap) {
         if (chaptersMap == null) {
             return new ArrayList<>();
         }
@@ -119,64 +119,6 @@ public class StoryDetailActivity extends AppCompatActivity {
                     String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
                     return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
                 } catch (NumberFormatException e) {
-                    return 0; // If parsing fails, maintain original order
-                }
-            }
-        });
-
-        return chapters;
-    }
-
-public int compare(Chapter c1, Chapter c2) {
-                try {
-                    // Extract number from keys like "chapter1", "chapter2", etc.
-                    String key1 = getKeyForChapter(chaptersMap, c1).replace("chapter", "");
-                    String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
-                    return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
-                } catch (NumberFormatException e) {
-                    return 0; // If parsing fails, maintain original order
-                }
-            }
-        });
-
-        return chapters;
-    }
-        List<Chapter> chapters = new ArrayList<>(chaptersMap.values());
-
-        Collections.sort(chapters, new Comparator<Chapter>() {
-            @Override
-            public int compare(Chapter c1, Chapter c2) {
-                try {
-                    // Extract number from keys like "chapter1", "chapter2", etc.
-                    String key1 = getKeyForChapter(chaptersMap, c1).replace("chapter", "");
-                    String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
-                    return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
-                } catch (NumberFormatException e) {
-                    return 0; // If parsing fails, maintain original order
-                }
-            }
-        });
-
-        return chapters;
-    }
-        List<Chapter> chapters = new ArrayList<>(chaptersMap.values());
-
-        Collections.sort(chapters, new Comparator<Chapter>() {
-            @Override
-            public int compare(Chapter c1, Chapter c2) {
-                try {
-                    // Extract number from keys like "chapter1", "chapter2", etc.
-                    String key1 = getKeyForChapter(chaptersMap, c1).replace("chapter", "");
-                    String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
-                    return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
-                } catch (NumberFormatException e) {
-                    return 0; // If parsing fails, maintain original order
-                }
-            }
-        });
-
-        return chapters;
-    } catch (NumberFormatException e) {
                     return 0; // If parsing fails, maintain original order
                 }
             }
@@ -206,6 +148,7 @@ public int compare(Chapter c1, Chapter c2) {
             Toast.makeText(this, "Không thể lưu truyện", Toast.LENGTH_SHORT).show();
             return;
         }
+
         String userId = currentUser.getUid();
 
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users")
@@ -230,7 +173,8 @@ public int compare(Chapter c1, Chapter c2) {
                                 // Chỉ gọi requestRefresh sau khi lưu thành công
                                 sharedViewModel.requestRefresh();
                             })
-                            .addOnFailureListener(e -> Toast.makeText(StoryDetailActivity.this, "Lỗi khi lưu: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                            .addOnFailureListener(e -> Toast.makeText(StoryDetailActivity.this, "Lỗi khi lưu: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show());
                 }
             }
 
