@@ -13,6 +13,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.preference.PreferenceManager;
 
 import com.jian.tangthucac.R;
@@ -32,7 +33,7 @@ public class UserFragment extends Fragment {
     private TextView tvUserEmail, tvUserId;
     private Button btnLogin, btnLogout;
     private LinearLayout loggedInLayout, notLoggedInLayout;
-    private Switch switchDarkMode;
+    private SwitchCompat switchDarkMode;
     private FirebaseAuth mAuth;
     private SharedPreferences sharedPreferences;
 
