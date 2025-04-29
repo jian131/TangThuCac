@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.Switch;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
@@ -57,10 +56,10 @@ public class UserFragment extends Fragment {
         switchDarkMode = view.findViewById(R.id.switchDarkMode);
 
         // Set up login button
-        btnLogin.setOnClickListener(v -> startActivity(new Intent(getContext(), LoginActivity.class)));
+        if (btnLogin != null) btnLogin.setOnClickListener(v -> startActivity(new Intent(getContext(), LoginActivity.class)));
 
         // Set up logout button
-        btnLogout.setOnClickListener(v -> {
+        if (btnLogout != null) btnLogout.setOnClickListener(v -> {
             // Sign out from Firebase Auth
             mAuth.signOut();
             // Update UI after logout
@@ -69,9 +68,9 @@ public class UserFragment extends Fragment {
 
         // Set up dark mode switch
         boolean isDarkMode = sharedPreferences.getBoolean("dark_mode", false);
-        switchDarkMode.setChecked(isDarkMode);
+        if (switchDarkMode != null) switchDarkMode.setChecked(isDarkMode);
 
-        switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        if (switchDarkMode != null) switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             // Save dark mode preference
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean("dark_mode", isChecked);
