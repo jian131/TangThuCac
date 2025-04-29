@@ -13,4 +13,6 @@
     <!-- Additional required colors -->
     <color name="white">#FFFFFF</color>
     <color name="lightGrey">#F1F1F1</color>
+    <!-- Additional colors -->
+    <color name="darkGrey">#444444</color>
 </resources>
