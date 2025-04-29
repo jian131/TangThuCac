@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         //Tích hợp cache của Firebase, chỉ gọi 1 lần duy nhất
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        // Firebase persistence now initialized in App class
 
         viewPager = findViewById(R.id.viewPager);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
