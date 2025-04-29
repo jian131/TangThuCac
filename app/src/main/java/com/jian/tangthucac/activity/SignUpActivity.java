@@ -40,6 +40,7 @@ public class SignUpActivity extends AppCompatActivity {
         tpassword = findViewById(R.id.txtPassdk);
         repass = findViewById(R.id.txtPassdkre);
         btnSignup = findViewById(R.id.btnSignup);
+        Log.d(TAG, "Button signup initialization");
         txtLogin = findViewById(R.id.txtLogin);
         mAuth = FirebaseAuth.getInstance();
 

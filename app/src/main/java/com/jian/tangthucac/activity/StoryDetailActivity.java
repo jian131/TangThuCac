@@ -69,9 +69,15 @@ public class StoryDetailActivity extends AppCompatActivity {
                 storyTitle.setText(story.getTitle());
                 storyAuthor.setText("Tác giả: " + story.getAuthor());
                 storyViews.setText("Lượt xem: " + story.getViews());
-                Glide.with(this).load(story.getImage()).into(storyImage);
+                String imageUrl = story.getImage();
+                if (imageUrl != null && !imageUrl.isEmpty()) {
+                    Glide.with(this).load(imageUrl).placeholder(R.drawable.loading_placeholder).error(R.drawable.error_image).into(storyImage);
+                } else {
+                    storyImage.setImageResource(R.drawable.default_cover);
+                }
 
                 // Get and sort chapters
+                // Get chapters safely with null check
                 chapterList = getSortedChapters(story.getChapters());
 
                 // Setup adapter with sorted chapters
@@ -99,6 +105,9 @@ public class StoryDetailActivity extends AppCompatActivity {
     }
 
     private List<Chapter> getSortedChapters(Map<String, Chapter> chaptersMap) {
+        if (chaptersMap == null) {
+            return new ArrayList<>();
+        }
         List<Chapter> chapters = new ArrayList<>(chaptersMap.values());
 
         Collections.sort(chapters, new Comparator<Chapter>() {
@@ -110,6 +119,13 @@ public class StoryDetailActivity extends AppCompatActivity {
                     String key2 = getKeyForChapter(chaptersMap, c2).replace("chapter", "");
                     return Integer.compare(Integer.parseInt(key1), Integer.parseInt(key2));
                 } catch (NumberFormatException e) {
+                    return 0; // If parsing fails, maintain original order
+                }
+            }
+        });
+
+        return chapters;
+    } catch (NumberFormatException e) {
                     return 0; // If parsing fails, maintain original order
                 }
             }

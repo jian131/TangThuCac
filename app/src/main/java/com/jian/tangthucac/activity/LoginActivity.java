@@ -51,6 +51,7 @@ public class LoginActivity extends AppCompatActivity {
         txtEmail = findViewById(R.id.txtAcc);
         txtPassword = findViewById(R.id.txtPass);
         btnLogin = findViewById(R.id.btnLogin);
+        Log.d(TAG, "Button login initialization");
         txtSignup = findViewById(R.id.txtSignup);
         btnGoogle = findViewById(R.id.btnGoogle);
         mAuth = FirebaseAuth.getInstance();
@@ -64,9 +65,8 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
 
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        btnLogin.setOnClickListener(view -> {
+            
                 String email = txtEmail.getText().toString();
                 String password = txtPassword.getText().toString();
                 if (email.isEmpty()||password.isEmpty()){
@@ -98,8 +98,7 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         txtSignup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+            
                 Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
                 startActivity(intent);
             }
