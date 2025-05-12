@@ -1,10 +1,10 @@
-
 package com.jian.tangthucac.activity;
 
 import android.app.Dialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class ChapterReaderActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
+    private static final String TAG = "ChapterReaderActivity";
     private TextView chapterTitle, chapterContent;
     private Button btnPrev, btnNext, btnTTSSettings, btnPlay, btnStop;
     private Story story;
@@ -57,57 +58,96 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
         textToSpeech = new TextToSpeech(this, this);
 
         // Nhận dữ liệu từ Intent
-        story = (Story) getIntent().getSerializableExtra("story");
-        currentIndex = getIntent().getIntExtra("chapterIndex", 0);
+        try {
+            story = (Story) getIntent().getSerializableExtra("story");
+            currentIndex = getIntent().getIntExtra("chapterIndex", 0);
 
-        if (story != null) {
-            // Chuyển đổi map chapters thành list
-            Map<String, Chapter> chaptersMap = story.getChapters();
-            chapterList = new ArrayList<>(chaptersMap.values());
-            displayChapter(currentIndex);
-
-            // Xử lý nút chuyển chương
-            btnPrev.setOnClickListener(v -> {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    displayChapter(currentIndex);
-                    stopSpeaking();
+            if (story != null) {
+                // Chuyển đổi map chapters thành list - kiểm tra null
+                Map<String, Chapter> chaptersMap = story.getChapters();
+                if (chaptersMap == null) {
+                    // Xử lý khi chapters là null
+                    Log.e(TAG, "Chapters map is null for story: " + story.getTitle());
+                    Toast.makeText(this, "Không tìm thấy dữ liệu chương", Toast.LENGTH_LONG).show();
+                    chapterList = new ArrayList<>();
+                    // Hiển thị thông báo lỗi
+                    chapterTitle.setText("Lỗi tải dữ liệu");
+                    chapterContent.setText("Không thể tải nội dung chương. Truyện này có thể chưa có dữ liệu.");
                 } else {
-                    Toast.makeText(this, "Đây là chương đầu tiên", Toast.LENGTH_SHORT).show();
+                    // Tiếp tục với dữ liệu chapters hợp lệ
+                    chapterList = new ArrayList<>(chaptersMap.values());
+                    if (chapterList.isEmpty()) {
+                        Toast.makeText(this, "Truyện chưa có chương nào", Toast.LENGTH_SHORT).show();
+                        chapterTitle.setText("Thông báo");
+                        chapterContent.setText("Truyện này chưa có chương nào.");
+                    } else {
+                        displayChapter(currentIndex);
+                    }
                 }
-            });
 
-            btnNext.setOnClickListener(v -> {
-                if (currentIndex < chapterList.size() - 1) {
-                    currentIndex++;
-                    displayChapter(currentIndex);
+                // Xử lý nút chuyển chương
+                btnPrev.setOnClickListener(v -> {
+                    if (chapterList.isEmpty()) {
+                        Toast.makeText(this, "Không có chương nào để hiển thị", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        displayChapter(currentIndex);
+                        stopSpeaking();
+                    } else {
+                        Toast.makeText(this, "Đây là chương đầu tiên", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                btnNext.setOnClickListener(v -> {
+                    if (chapterList.isEmpty()) {
+                        Toast.makeText(this, "Không có chương nào để hiển thị", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (currentIndex < chapterList.size() - 1) {
+                        currentIndex++;
+                        displayChapter(currentIndex);
+                        stopSpeaking();
+                    } else {
+                        Toast.makeText(this, "Đây là chương cuối cùng", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                // Xử lý nút Play
+                btnPlay.setOnClickListener(v -> {
+                    if (chapterList.isEmpty()) {
+                        Toast.makeText(this, "Không có nội dung để đọc", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (isPlaying) {
+                        pauseSpeaking();
+                        btnPlay.setText("Đọc");
+                    } else {
+                        startSpeaking();
+                        btnPlay.setText("Tạm dừng");
+                    }
+                    isPlaying = !isPlaying;
+                });
+
+                // Xử lý nút Stop
+                btnStop.setOnClickListener(v -> {
                     stopSpeaking();
-                } else {
-                    Toast.makeText(this, "Đây là chương cuối cùng", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            // Xử lý nút Play
-            btnPlay.setOnClickListener(v -> {
-                if (isPlaying) {
-                    pauseSpeaking();
                     btnPlay.setText("Đọc");
-                } else {
-                    startSpeaking();
-                    btnPlay.setText("Tạm dừng");
-                }
-                isPlaying = !isPlaying;
-            });
+                    isPlaying = false;
+                });
 
-            // Xử lý nút Stop
-            btnStop.setOnClickListener(v -> {
-                stopSpeaking();
-                btnPlay.setText("Đọc");
-                isPlaying = false;
-            });
-
-            // Xử lý nút TTS Settings
-            btnTTSSettings.setOnClickListener(v -> showTTSControlDialog());
+                // Xử lý nút TTS Settings
+                btnTTSSettings.setOnClickListener(v -> showTTSControlDialog());
+            } else {
+                // Story là null
+                Toast.makeText(this, "Không thể tải dữ liệu truyện", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading story: " + e.getMessage());
+            Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 
@@ -205,11 +245,16 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
     }
 
     private void startSpeaking() {
-        if (textToSpeech != null) {
+        if (textToSpeech != null && !chapterList.isEmpty()) {
             textToSpeech.setSpeechRate(currentSpeed);
             textToSpeech.setPitch(currentPitch);
-            String text = chapterList.get(currentIndex).getContent();
-            textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+            Chapter chapter = chapterList.get(currentIndex);
+            if (chapter != null && chapter.getContent() != null) {
+                String text = chapter.getContent();
+                textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                Toast.makeText(this, "Không có nội dung để đọc", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -226,9 +271,17 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
     }
 
     private void displayChapter(int index) {
+        if (chapterList.isEmpty() || index < 0 || index >= chapterList.size()) {
+            return;
+        }
         Chapter chapter = chapterList.get(index);
-        chapterTitle.setText(chapter.getTitle());
-        chapterContent.setText(chapter.getContent());
+        if (chapter == null) {
+            Toast.makeText(this, "Chương không hợp lệ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        chapterTitle.setText(chapter.getTitle() != null ? chapter.getTitle() : "Không có tiêu đề");
+        chapterContent.setText(chapter.getContent() != null ? chapter.getContent() : "Không có nội dung");
         chapterContent.setTextSize(currentFontSize); // Áp dụng cỡ chữ hiện tại
         chapterContent.setTypeface(currentTypeface); // Áp dụng phông chữ hiện tại
     }

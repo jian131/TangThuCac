@@ -2,6 +2,7 @@ package com.jian.tangthucac.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class StoryDetailActivity extends AppCompatActivity {
+    private static final String TAG = "StoryDetailActivity";
     private ImageView storyImage;
     private TextView storyTitle, storyAuthor, storyViews;
     private RecyclerView chapterRecyclerView;
@@ -77,11 +79,24 @@ public class StoryDetailActivity extends AppCompatActivity {
                     storyImage.setImageResource(R.drawable.default_cover);
                 }
 
-                // Get and sort chapters
-                chapterList = getSortedChapters(story.getChapters());
+                // Kiểm tra chapters null trước khi cố gắng lấy danh sách
+                Map<String, Chapter> chaptersMap = story.getChapters();
+                if (chaptersMap == null) {
+                    Log.e(TAG, "Chapters map is null for story: " + story.getTitle());
+                    Toast.makeText(this, "Truyện chưa có chương", Toast.LENGTH_SHORT).show();
+                    chapterList = new ArrayList<>();
+                } else {
+                    // Get and sort chapters
+                    chapterList = getSortedChapters(chaptersMap);
+                }
 
                 // Setup adapter with sorted chapters
                 ChapterAdapter adapter = new ChapterAdapter(this, chapterList, position -> {
+                    if (chapterList.isEmpty()) {
+                        Toast.makeText(this, "Không có chương nào để đọc", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     Intent intent = new Intent(StoryDetailActivity.this, ChapterReaderActivity.class);
                     intent.putExtra("story", story);
                     intent.putExtra("chapterIndex", position);
@@ -91,6 +106,11 @@ public class StoryDetailActivity extends AppCompatActivity {
 
                 // Read button click
                 readButton.setOnClickListener(v -> {
+                    if (chapterList.isEmpty()) {
+                        Toast.makeText(this, "Truyện này chưa có chương nào để đọc", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     Intent intent = new Intent(StoryDetailActivity.this, ChapterReaderActivity.class);
                     intent.putExtra("story", story);
                     intent.putExtra("chapterIndex", 0);
@@ -99,7 +119,8 @@ public class StoryDetailActivity extends AppCompatActivity {
                 saveButton.setOnClickListener(v -> saveStoryToLibrary());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error loading story details", e);
+            Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             finish();
         }
     }
