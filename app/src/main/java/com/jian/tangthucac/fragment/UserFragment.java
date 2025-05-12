@@ -1,15 +1,16 @@
-
 package com.jian.tangthucac.fragment;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.widget.SwitchCompat;
@@ -17,6 +18,7 @@ import androidx.preference.PreferenceManager;
 
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.activity.LoginActivity;
+import com.jian.tangthucac.activity.SignUpActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -31,10 +33,12 @@ public class UserFragment extends Fragment {
 
     private TextView tvUserEmail, tvUserId;
     private Button btnLogin, btnLogout;
+    private TextView fakeBtnLogin, fakeBtnSignup; // Sử dụng TextView làm nút
     private LinearLayout loggedInLayout, notLoggedInLayout;
     private SwitchCompat switchDarkMode;
     private FirebaseAuth mAuth;
     private SharedPreferences sharedPreferences;
+    private static final String TAG = "UserFragment";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -51,38 +55,71 @@ public class UserFragment extends Fragment {
         notLoggedInLayout = view.findViewById(R.id.notLoggedInLayout);
         tvUserEmail = view.findViewById(R.id.tvUserEmail);
         tvUserId = view.findViewById(R.id.tvUserId);
-        btnLogin = view.findViewById(R.id.btnLogin);
         btnLogout = view.findViewById(R.id.btnLogout);
+
+        // Tìm các nút TextView giả
+        fakeBtnLogin = view.findViewById(R.id.fakebtnLogin);
+        fakeBtnSignup = view.findViewById(R.id.fakebtnSignup);
+
+        // Thiết lập switch chế độ tối
         switchDarkMode = view.findViewById(R.id.switchDarkMode);
 
-        // Set up login button
-        if (btnLogin != null) btnLogin.setOnClickListener(v -> startActivity(new Intent(getContext(), LoginActivity.class)));
-
         // Set up logout button
-        if (btnLogout != null) btnLogout.setOnClickListener(v -> {
-            // Sign out from Firebase Auth
-            mAuth.signOut();
-            // Update UI after logout
-            updateUI(null);
-        });
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                // Sign out from Firebase Auth
+                mAuth.signOut();
+                // Update UI after logout
+                updateUI(null);
+                Toast.makeText(getContext(), "Đã đăng xuất", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        // Set up fake login button
+        if (fakeBtnLogin != null) {
+            fakeBtnLogin.setOnClickListener(v -> {
+                Log.d(TAG, "Fake login button clicked");
+                Toast.makeText(getContext(), "Đang chuyển đến trang đăng nhập", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(getContext(), LoginActivity.class));
+            });
+        }
+
+        // Set up fake signup button
+        if (fakeBtnSignup != null) {
+            fakeBtnSignup.setOnClickListener(v -> {
+                Log.d(TAG, "Fake signup button clicked");
+                Toast.makeText(getContext(), "Đang chuyển đến trang đăng ký", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(getContext(), SignUpActivity.class));
+            });
+        }
 
         // Set up dark mode switch
         boolean isDarkMode = sharedPreferences.getBoolean("dark_mode", false);
-        if (switchDarkMode != null) switchDarkMode.setChecked(isDarkMode);
+        if (switchDarkMode != null) {
+            switchDarkMode.setChecked(isDarkMode);
+        }
 
-        if (switchDarkMode != null) switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // Save dark mode preference
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("dark_mode", isChecked);
-            editor.apply();
+        if (switchDarkMode != null) {
+            switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                // Ghi log để debug
+                Log.d(TAG, "Dark mode switch changed to: " + isChecked);
 
-            // Apply dark mode
-            if (isChecked) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-            }
-        });
+                // Hiển thị thông báo để xác nhận thay đổi
+                Toast.makeText(getContext(), isChecked ? "Đã bật chế độ tối" : "Đã tắt chế độ tối", Toast.LENGTH_SHORT).show();
+
+                // Save dark mode preference
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putBoolean("dark_mode", isChecked);
+                editor.apply();
+
+                // Apply dark mode
+                if (isChecked) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                }
+            });
+        }
 
         return view;
     }
@@ -126,6 +163,7 @@ public class UserFragment extends Fragment {
                 @Override
                 public void onCancelled(DatabaseError databaseError) {
                     // Handle error
+                    Log.e(TAG, "Firebase Database Error: " + databaseError.getMessage());
                 }
             });
 
