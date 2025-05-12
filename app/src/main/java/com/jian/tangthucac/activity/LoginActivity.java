@@ -73,16 +73,23 @@ public class LoginActivity extends AppCompatActivity {
 
         // Đảm bảo nút đăng nhập hoạt động
         btnLogin.setEnabled(true);
+
+        // Thử với một ClickListener đơn giản đầu tiên
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "Login button clicked");
+                Log.e(TAG, "==== BUTTON CLICKED ====");
+                Toast.makeText(LoginActivity.this, "Nút đã được nhấn!", Toast.LENGTH_SHORT).show();
+
+                // Tiếp tục với quy trình đăng nhập
                 String email = txtEmail.getText().toString();
                 String password = txtPassword.getText().toString();
+
                 if (email.isEmpty() || password.isEmpty()) {
                     Toast.makeText(LoginActivity.this, "Không được bỏ trống!", Toast.LENGTH_SHORT).show();
                     return;
                 }
+
                 if (!isValidEmail(email)) {
                     Toast.makeText(LoginActivity.this, "Địa chỉ email không hợp lệ!", Toast.LENGTH_SHORT).show();
                     return;
@@ -92,25 +99,39 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, "Đang đăng nhập...", Toast.LENGTH_SHORT).show();
 
                 mAuth.signInWithEmailAndPassword(email, password)
-                        .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()) {
-                                    Log.d(TAG, "signInWithEmail:success");
-                                    FirebaseUser user = mAuth.getCurrentUser();
-                                    Toast.makeText(LoginActivity.this, "Đăng Nhập Thành công", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                    startActivity(intent);
-                                    finish(); // Đóng activity đăng nhập sau khi chuyển sang MainActivity
-                                } else {
-                                    Log.w(TAG, "signInWithEmail:failure", task.getException());
-                                    Toast.makeText(LoginActivity.this, "Sai Tài Khoản Hoặc Mật khẩu!",
-                                            Toast.LENGTH_SHORT).show();
-                                }
+                    .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                Log.d(TAG, "signInWithEmail:success");
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                Toast.makeText(LoginActivity.this, "Đăng Nhập Thành công", Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                startActivity(intent);
+                                finish(); // Đóng activity đăng nhập sau khi chuyển sang MainActivity
+                            } else {
+                                Log.w(TAG, "signInWithEmail:failure", task.getException());
+                                Toast.makeText(LoginActivity.this, "Sai Tài Khoản Hoặc Mật khẩu!",
+                                        Toast.LENGTH_SHORT).show();
                             }
-                        });
+                        }
+                    });
             }
         });
+
+        // Thêm debug để kiểm tra trạng thái của nút
+        try {
+            boolean canClick = btnLogin.isClickable();
+            Log.e(TAG, "Button clickable: " + canClick);
+
+            boolean isFocusable = btnLogin.isFocusable();
+            Log.e(TAG, "Button focusable: " + isFocusable);
+
+            boolean isEnabled = btnLogin.isEnabled();
+            Log.e(TAG, "Button enabled: " + isEnabled);
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking button state: " + e.getMessage());
+        }
 
         txtSignup.setOnClickListener(new View.OnClickListener() {
             @Override

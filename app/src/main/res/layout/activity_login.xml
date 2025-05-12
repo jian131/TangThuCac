@@ -52,15 +52,17 @@
             android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Đăng Nhập"
         android:padding="12dp"
-        android:backgroundTint="@color/colorPrimary"
+        app:backgroundTint="@color/colorPrimary"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:elevation="8dp"
+        app:cornerRadius="8dp" />
 
     <TextView
         android:id="@+id/txtSignup"
