@@ -43,10 +43,21 @@ public class LoginActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
 
+        // Khởi tạo các view
         txtEmail = findViewById(R.id.txtAcc);
         txtPassword = findViewById(R.id.txtPass);
         btnLogin = findViewById(R.id.btnLogin);
         Log.d(TAG, "Button login initialization");
+
+        // Kiểm tra xem btnLogin có null không
+        if (btnLogin == null) {
+            Log.e(TAG, "btnLogin is null! Check ID in layout");
+            Toast.makeText(this, "Lỗi khởi tạo giao diện", Toast.LENGTH_LONG).show();
+            return;
+        } else {
+            Log.d(TAG, "btnLogin successfully initialized");
+        }
+
         txtSignup = findViewById(R.id.txtSignup);
         btnGoogle = findViewById(R.id.btnGoogle);
         mAuth = FirebaseAuth.getInstance();
@@ -60,34 +71,45 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
 
-        btnLogin.setOnClickListener(view -> {
-            String email = txtEmail.getText().toString();
-            String password = txtPassword.getText().toString();
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(LoginActivity.this, "Không được bỏ trống!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (!isValidEmail(email)) {
-                Toast.makeText(LoginActivity.this, "Địa chỉ email không hợp lệ!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            mAuth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()) {
-                                Log.d(TAG, "signInWithEmail:success");
-                                FirebaseUser user = mAuth.getCurrentUser();
-                                Toast.makeText(LoginActivity.this, "Đăng Nhập Thành công", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                startActivity(intent);
-                            } else {
-                                Log.w(TAG, "signInWithEmail:failure", task.getException());
-                                Toast.makeText(LoginActivity.this, "Sai Tài Khoản Hoặc Mật khẩu!",
-                                        Toast.LENGTH_SHORT).show();
+        // Đảm bảo nút đăng nhập hoạt động
+        btnLogin.setEnabled(true);
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, "Login button clicked");
+                String email = txtEmail.getText().toString();
+                String password = txtPassword.getText().toString();
+                if (email.isEmpty() || password.isEmpty()) {
+                    Toast.makeText(LoginActivity.this, "Không được bỏ trống!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (!isValidEmail(email)) {
+                    Toast.makeText(LoginActivity.this, "Địa chỉ email không hợp lệ!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Hiển thị thông báo đang đăng nhập
+                Toast.makeText(LoginActivity.this, "Đang đăng nhập...", Toast.LENGTH_SHORT).show();
+
+                mAuth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<AuthResult> task) {
+                                if (task.isSuccessful()) {
+                                    Log.d(TAG, "signInWithEmail:success");
+                                    FirebaseUser user = mAuth.getCurrentUser();
+                                    Toast.makeText(LoginActivity.this, "Đăng Nhập Thành công", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                    startActivity(intent);
+                                    finish(); // Đóng activity đăng nhập sau khi chuyển sang MainActivity
+                                } else {
+                                    Log.w(TAG, "signInWithEmail:failure", task.getException());
+                                    Toast.makeText(LoginActivity.this, "Sai Tài Khoản Hoặc Mật khẩu!",
+                                            Toast.LENGTH_SHORT).show();
+                                }
                             }
-                        }
-                    });
+                        });
+            }
         });
 
         txtSignup.setOnClickListener(new View.OnClickListener() {

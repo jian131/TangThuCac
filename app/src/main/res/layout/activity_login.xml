@@ -58,7 +58,9 @@
         android:layout_height="wrap_content"
         android:text="Đăng Nhập"
         android:padding="12dp"
-        android:backgroundTint="@color/colorPrimary" />
+        android:backgroundTint="@color/colorPrimary"
+        android:clickable="true"
+        android:focusable="true" />
 
     <TextView
         android:id="@+id/txtSignup"
