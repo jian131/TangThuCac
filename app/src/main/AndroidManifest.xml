@@ -42,6 +42,9 @@
         <activity
             android:name=".activity.ApiSettingsActivity"
             android:label="Cài đặt API" />
+        <activity
+            android:name=".activity.MyTranslatedNovelsActivity"
+            android:label="Truyện đã dịch của tôi" />
 
         <!-- Firebase auth activity for Google Sign In -->
         <activity

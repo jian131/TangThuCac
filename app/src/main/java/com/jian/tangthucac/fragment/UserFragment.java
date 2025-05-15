@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -25,6 +26,7 @@ import com.jian.tangthucac.activity.LoginActivity;
 import com.jian.tangthucac.activity.SignUpActivity;
 import com.jian.tangthucac.activity.WikidichBrowserActivity;
 import com.jian.tangthucac.activity.ApiSettingsActivity;
+import com.jian.tangthucac.activity.MyTranslatedNovelsActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -45,6 +47,11 @@ public class UserFragment extends Fragment {
     private FirebaseAuth mAuth;
     private SharedPreferences sharedPreferences;
     private static final String TAG = "UserFragment";
+
+    // Các layout quản lý truyện Trung Quốc
+    private LinearLayout searchChineseNovelLayout;
+    private LinearLayout myTranslatedNovelsLayout;
+    private LinearLayout apiSettingsLayout;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -75,6 +82,11 @@ public class UserFragment extends Fragment {
 
         // Thiết lập switch chế độ tối
         switchDarkMode = view.findViewById(R.id.switchDarkMode);
+
+        // Khởi tạo các layout quản lý truyện Trung Quốc
+        searchChineseNovelLayout = view.findViewById(R.id.searchChineseNovelLayout);
+        myTranslatedNovelsLayout = view.findViewById(R.id.myTranslatedNovelsLayout);
+        apiSettingsLayout = view.findViewById(R.id.apiSettingsLayout);
 
         // Set up logout button
         if (btnLogout != null) {
@@ -133,7 +145,33 @@ public class UserFragment extends Fragment {
             });
         }
 
+        // Thiết lập các sự kiện cho quản lý truyện Trung Quốc
+        setupChineseNovelFeatures();
+
         return view;
+    }
+
+    private void setupChineseNovelFeatures() {
+        // Sự kiện tìm kiếm truyện Trung Quốc
+        if (searchChineseNovelLayout != null) {
+            searchChineseNovelLayout.setOnClickListener(v -> {
+                openChineseNovelSearch();
+            });
+        }
+
+        // Sự kiện xem truyện đã dịch
+        if (myTranslatedNovelsLayout != null) {
+            myTranslatedNovelsLayout.setOnClickListener(v -> {
+                openMyTranslatedNovels();
+            });
+        }
+
+        // Sự kiện thiết lập API dịch thuật
+        if (apiSettingsLayout != null) {
+            apiSettingsLayout.setOnClickListener(v -> {
+                openApiSettings();
+            });
+        }
     }
 
     @Override
@@ -174,6 +212,16 @@ public class UserFragment extends Fragment {
     private void openChineseNovelSearch() {
         Intent intent = new Intent(getActivity(), ChineseNovelSearchActivity.class);
         startActivity(intent);
+    }
+
+    private void openMyTranslatedNovels() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            Intent intent = new Intent(getActivity(), MyTranslatedNovelsActivity.class);
+            startActivity(intent);
+        } else {
+            Toast.makeText(getContext(), "Vui lòng đăng nhập để sử dụng tính năng này", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openApiSettings() {

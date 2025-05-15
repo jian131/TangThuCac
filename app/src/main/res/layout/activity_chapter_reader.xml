@@ -47,59 +47,84 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <Button
-            android:id="@+id/btnPrev"
-            android:layout_width="0dp"
+        <!-- Chuyển đổi ngôn ngữ và điều khiển TTS -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:text="Trước"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/colorAccent" />
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
 
-        <Button
-            android:id="@+id/btnTTSSettings"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="4dp"
-            android:layout_weight="1"
-            android:text="Cài đặt TTS"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/colorPrimaryDark" />
+            <ToggleButton
+                android:id="@+id/toggleLanguage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textOn="Tiếng Việt"
+                android:textOff="Tiếng Trung"
+                android:checked="true"
+                android:backgroundTint="@color/colorPrimaryDark" />
 
-        <Button
-            android:id="@+id/btnPlay"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="4dp"
-            android:layout_weight="1"
-            android:text="Đọc"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/colorAccent" />
+            <Button
+                android:id="@+id/btnTTSSettings"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Cài đặt TTS"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/colorPrimaryDark" />
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/btnStop"
-            android:layout_width="0dp"
+        <!-- Điều khiển chuyển chương và phát TTS -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="4dp"
-            android:layout_weight="1"
-            android:text="Dừng"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/colorAccent" />
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btnNext"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_weight="1"
-            android:text="Tiếp"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/colorAccent" />
+            <Button
+                android:id="@+id/btnPrev"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="Trước"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/colorAccent" />
+
+            <Button
+                android:id="@+id/btnPlay"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:text="Đọc"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/colorAccent" />
+
+            <Button
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:text="Dừng"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/colorAccent" />
+
+            <Button
+                android:id="@+id/btnNext"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Tiếp"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/colorAccent" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

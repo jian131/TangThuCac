@@ -15,12 +15,14 @@ public class OriginalStory implements Serializable {
     private String description;     // Mô tả gốc
     private String descriptionVi;   // Mô tả đã dịch
     private String imageUrl;        // Đường dẫn hình ảnh
+    private String coverImage;      // Đường dẫn hình ảnh bìa
     private String source;          // Nguồn (ví dụ: webnovel, novelfull, etc.)
     private String sourceUrl;       // URL của truyện gốc
     private String language;        // Ngôn ngữ gốc (zh, en, etc.)
     private List<String> genres;    // Thể loại
     private List<String> tags;      // Các thẻ
     private int chapterCount;       // Số chương
+    private int translatedChaptersCount; // Số chương đã dịch
     private Map<String, TranslatedChapter> translatedChapters; // Map lưu trữ các chương đã dịch
     private boolean completed;      // Trạng thái hoàn thành
     private long updateTime;        // Thời gian cập nhật
@@ -86,6 +88,14 @@ public class OriginalStory implements Serializable {
         this.imageUrl = imageUrl;
     }
 
+    public String getCoverImage() {
+        return coverImage != null ? coverImage : imageUrl;
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = coverImage;
+    }
+
     public String getSource() {
         return source;
     }
@@ -134,12 +144,27 @@ public class OriginalStory implements Serializable {
         this.chapterCount = chapterCount;
     }
 
+    public int getTranslatedChaptersCount() {
+        if (translatedChapters != null) {
+            return translatedChapters.size();
+        }
+        return translatedChaptersCount;
+    }
+
+    public void setTranslatedChaptersCount(int translatedChaptersCount) {
+        this.translatedChaptersCount = translatedChaptersCount;
+    }
+
     public Map<String, TranslatedChapter> getTranslatedChapters() {
         return translatedChapters;
     }
 
     public void setTranslatedChapters(Map<String, TranslatedChapter> translatedChapters) {
         this.translatedChapters = translatedChapters;
+        // Cập nhật số lượng chương đã dịch nếu có dữ liệu
+        if (translatedChapters != null) {
+            this.translatedChaptersCount = translatedChapters.size();
+        }
     }
 
     public boolean isCompleted() {
@@ -156,5 +181,18 @@ public class OriginalStory implements Serializable {
 
     public void setUpdateTime(long updateTime) {
         this.updateTime = updateTime;
+    }
+
+    /**
+     * Lấy tổng số chương của truyện (nếu chưa có thông tin thì lấy từ số chương đã dịch)
+     */
+    public int getTotalChapters() {
+        if (chapterCount > 0) {
+            return chapterCount;
+        }
+        if (translatedChapters != null) {
+            return translatedChapters.size();
+        }
+        return 0;
     }
 }

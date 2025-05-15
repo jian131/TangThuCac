@@ -3,6 +3,8 @@ package com.jian.tangthucac.API;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -417,5 +419,193 @@ public class ChineseNovelManager {
         if (preferences != null) {
             preferences.edit().clear().apply();
         }
+    }
+
+    /**
+     * Lấy thông tin chương theo ID
+     */
+    public void getChapterById(String storyId, String chapterId, OnChapterLoadedListener listener) {
+        // Check cache first
+        if (translatedChaptersRef != null) {
+            translatedChaptersRef
+                .child(storyId)
+                .child("chapters")
+                .child(chapterId)
+                .get()
+                .addOnSuccessListener(dataSnapshot -> {
+                    if (dataSnapshot.exists()) {
+                        TranslatedChapter chapter = dataSnapshot.getValue(TranslatedChapter.class);
+                        if (chapter != null) {
+                            // Đảm bảo chapter có ID
+                            chapter.setId(dataSnapshot.getKey());
+                            listener.onChapterLoaded(chapter);
+                        } else {
+                            listener.onError(new Exception("Không thể parse dữ liệu chương"));
+                        }
+                    } else {
+                        listener.onError(new Exception("Không tìm thấy chương"));
+                    }
+                })
+                .addOnFailureListener(e -> listener.onError(e));
+        } else {
+            listener.onError(new Exception("Firebase chưa được khởi tạo"));
+        }
+    }
+
+    /**
+     * Lấy chương liền kề (trước hoặc sau)
+     * @param isPrevious true để lấy chương trước, false để lấy chương sau
+     */
+    public void getAdjacentChapter(String storyId, String currentChapterId, boolean isPrevious, OnChapterLoadedListener listener) {
+        // Lấy danh sách chương của truyện
+        if (translatedChaptersRef != null) {
+            translatedChaptersRef
+                .child(storyId)
+                .child("chapters")
+                .orderByKey()
+                .get()
+                .addOnSuccessListener(dataSnapshot -> {
+                    if (dataSnapshot.exists()) {
+                        List<String> chapterIds = new ArrayList<>();
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            chapterIds.add(snapshot.getKey());
+                        }
+
+                        // Tìm vị trí chương hiện tại
+                        int currentIndex = chapterIds.indexOf(currentChapterId);
+                        if (currentIndex == -1) {
+                            listener.onError(new Exception("Không tìm thấy chương hiện tại"));
+                            return;
+                        }
+
+                        // Tính vị trí chương mới
+                        int newIndex = isPrevious ? currentIndex - 1 : currentIndex + 1;
+                        if (newIndex < 0 || newIndex >= chapterIds.size()) {
+                            // Không có chương trước/sau
+                            listener.onChapterLoaded(null);
+                            return;
+                        }
+
+                        // Lấy thông tin chương mới
+                        String newChapterId = chapterIds.get(newIndex);
+                        getChapterById(storyId, newChapterId, listener);
+                    } else {
+                        listener.onError(new Exception("Không tìm thấy danh sách chương"));
+                    }
+                })
+                .addOnFailureListener(e -> listener.onError(e));
+        } else {
+            listener.onError(new Exception("Firebase chưa được khởi tạo"));
+        }
+    }
+
+    private void showEmptyState() {
+        loadingView.setVisibility(View.GONE);
+        recyclerView.setVisibility(View.GONE);
+        tvEmptyState.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Lấy danh sách truyện đã dịch của người dùng
+     * @param userId ID của người dùng
+     * @param listener callback khi tải xong
+     */
+    public void getUserTranslatedNovels(String userId, OnStoriesLoadedListener listener) {
+        if (userId == null || userId.isEmpty()) {
+            listener.onError(new IllegalArgumentException("userId không được null hoặc rỗng"));
+            return;
+        }
+
+        if (FirebaseDatabase.getInstance() == null) {
+            FirebaseDatabase.getInstance();
+        }
+
+        DatabaseReference userTranslationsRef = FirebaseDatabase.getInstance().getReference("user_translations").child(userId);
+        userTranslationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                List<OriginalStory> userStories = new ArrayList<>();
+                List<String> storyIds = new ArrayList<>();
+
+                // Lấy danh sách ID truyện đã dịch
+                for (DataSnapshot storySnapshot : dataSnapshot.getChildren()) {
+                    String storyId = storySnapshot.getKey();
+                    if (storyId != null) {
+                        storyIds.add(storyId);
+                    }
+                }
+
+                if (storyIds.isEmpty()) {
+                    // Người dùng chưa có truyện nào đã dịch
+                    listener.onStoriesLoaded(userStories);
+                    return;
+                }
+
+                // Đếm số lượng truyện đã xử lý
+                final int[] storiesProcessed = {0};
+                final int totalStories = storyIds.size();
+
+                // Lấy thông tin chi tiết cho từng truyện
+                for (String storyId : storyIds) {
+                    getOriginalStoryById(storyId, new OnStoryLoadedListener() {
+                        @Override
+                        public void onStoryLoaded(OriginalStory story) {
+                            // Cập nhật số lượng chương đã dịch
+                            if (dataSnapshot.child(storyId).hasChild("translatedChapters")) {
+                                int translatedCount = (int) dataSnapshot.child(storyId).child("translatedChapters").getChildrenCount();
+                                story.setTranslatedChaptersCount(translatedCount);
+                            }
+
+                            userStories.add(story);
+                            checkCompletion();
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            Log.e(TAG, "Error loading story " + storyId + ": " + e.getMessage());
+                            checkCompletion();
+                        }
+
+                        private void checkCompletion() {
+                            storiesProcessed[0]++;
+                            if (storiesProcessed[0] >= totalStories) {
+                                // Đã xử lý tất cả truyện
+                                listener.onStoriesLoaded(userStories);
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                listener.onError(databaseError.toException());
+            }
+        });
+    }
+
+    /**
+     * Xóa truyện khỏi danh sách đã dịch của người dùng
+     * @param userId ID của người dùng
+     * @param storyId ID của truyện cần xóa
+     * @param callback callback khi xong
+     */
+    public void removeUserTranslatedNovel(String userId, String storyId, FirebaseCallback<Boolean> callback) {
+        if (userId == null || userId.isEmpty() || storyId == null || storyId.isEmpty()) {
+            callback.onError(new IllegalArgumentException("userId và storyId không được null hoặc rỗng"));
+            return;
+        }
+
+        if (FirebaseDatabase.getInstance() == null) {
+            FirebaseDatabase.getInstance();
+        }
+
+        DatabaseReference userStoryRef = FirebaseDatabase.getInstance().getReference("user_translations")
+                .child(userId)
+                .child(storyId);
+
+        userStoryRef.removeValue()
+                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                .addOnFailureListener(e -> callback.onError(e));
     }
 }
