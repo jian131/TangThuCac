@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.adapter;
 
 import android.content.Context;
@@ -13,7 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
+import com.jian.tangthucac.utils.LocalImageHelper;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.model.Story;
 import com.jian.tangthucac.activity.StoryDetailActivity;
@@ -43,7 +42,9 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         holder.textAuthor.setText("Tác giả: " + story.getAuthor());
 
         // Load ảnh từ URL với Glide
-        Glide.with(context).load(story.getImage()).into(holder.imageStory);
+        // Glide.with(context).load(story.getImage()).into(holder.imageStory);
+        // Sử dụng LocalImageHelper thay thế
+        LocalImageHelper.loadStoryImage(context, story.getImage(), story.getId(), story.getTitle(), holder.imageStory);
 
         holder.itemView.setOnClickListener(v -> {
             Log.d("RecyclerView", "Clicked on: " + story.getTitle());
