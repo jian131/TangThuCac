@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -17,8 +20,10 @@ import androidx.preference.PreferenceManager;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.jian.tangthucac.R;
+import com.jian.tangthucac.activity.ChineseNovelSearchActivity;
 import com.jian.tangthucac.activity.LoginActivity;
 import com.jian.tangthucac.activity.SignUpActivity;
+import com.jian.tangthucac.activity.WikidichBrowserActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -39,6 +44,12 @@ public class UserFragment extends Fragment {
     private FirebaseAuth mAuth;
     private SharedPreferences sharedPreferences;
     private static final String TAG = "UserFragment";
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true); // Cho phép fragment có menu
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -130,6 +141,35 @@ public class UserFragment extends Fragment {
         // Check login status when fragment resumes
         FirebaseUser currentUser = mAuth.getCurrentUser();
         updateUI(currentUser);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.user_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_wikidich_browser) {
+            openWikidichBrowser();
+            return true;
+        } else if (id == R.id.action_chinese_novel_search) {
+            openChineseNovelSearch();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void openWikidichBrowser() {
+        Intent intent = new Intent(getActivity(), WikidichBrowserActivity.class);
+        startActivity(intent);
+    }
+
+    private void openChineseNovelSearch() {
+        Intent intent = new Intent(getActivity(), ChineseNovelSearchActivity.class);
+        startActivity(intent);
     }
 
     private void updateUI(FirebaseUser user) {

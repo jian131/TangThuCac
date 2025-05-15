@@ -1,4 +1,3 @@
-
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
@@ -65,19 +64,25 @@ dependencies {
     annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
     implementation("com.squareup.picasso:picasso:2.71828")
 
-    implementation("androidx.viewpager2:viewpager2:1.0.0")
-    implementation("com.google.android.material:material:1.6.0")
+    // ✅ Jsoup (trích xuất nội dung từ trang web)
+    implementation("org.jsoup:jsoup:1.16.2")
 
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.1")
-    implementation("com.google.android.material:material:1.4.0")
-
+    // ✅ Gson (JSON parsing)
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.9.0")
-    // OkHttp logging interceptor
+
+    // ✅ Dịch thuật API (OkHttp)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
-// AndroidX Preference
+    // ✅ AndroidX Components
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
+    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.preference:preference:1.2.1")
+
+    // ✅ Room Database cho caching
+    implementation("androidx.room:room-runtime:2.6.1")
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
 }

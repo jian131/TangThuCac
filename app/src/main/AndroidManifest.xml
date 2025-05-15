@@ -35,6 +35,10 @@
         <activity android:name=".activity.ChatActivity" />
         <activity android:name=".activity.GenreStoriesActivity" />
         <activity android:name=".activity.SearchActivity" />
+        <activity android:name=".activity.WikidichBrowserActivity" />
+        <activity
+            android:name=".activity.ChineseNovelSearchActivity"
+            android:label="Tìm kiếm truyện Trung Quốc" />
 
         <!-- Firebase auth activity for Google Sign In -->
         <activity

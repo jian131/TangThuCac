@@ -1,85 +1,104 @@
-
 package com.jian.tangthucac.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.google.android.material.button.MaterialButton;
 import com.jian.tangthucac.R;
-import com.jian.tangthucac.activity.StoryDetailActivity;
-import com.jian.tangthucac.model.Story;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.jian.tangthucac.model.OriginalStory;
 
 import java.util.List;
 
+/**
+ * Adapter để hiển thị kết quả tìm kiếm truyện
+ */
 public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.ViewHolder> {
-    private Context context;
-    private List<Story> stories;
 
-    public SearchResultAdapter(Context context, List<Story> stories) {
+    private final Context context;
+    private final List<OriginalStory> stories;
+    private OnItemClickListener listener;
+
+    public interface OnItemClickListener {
+        void onViewDetailClick(OriginalStory story);
+        void onDownloadClick(OriginalStory story);
+    }
+
+    public SearchResultAdapter(Context context, List<OriginalStory> stories) {
         this.context = context;
         this.stories = stories;
     }
 
-    public void updateData(List<Story> newStories) {
-        this.stories.clear();
-        this.stories.addAll(newStories);
-        notifyDataSetChanged();
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_search_result, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_search_result, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Story story = stories.get(position);
-        holder.tvTitle.setText(story.getTitle());
-        holder.tvAuthor.setText(story.getAuthor());
-        Glide.with(context).load(story.getImage()).into(holder.ivCover);
+        OriginalStory story = stories.get(position);
 
-        holder.itemView.setOnClickListener(v -> {
-            // Truy ngược từ title để lấy full story data
-            DatabaseReference storiesRef = FirebaseDatabase.getInstance().getReference("stories");
-            storiesRef.orderByChild("title").equalTo(story.getTitle())
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            if (snapshot.exists()) {
-                                for (DataSnapshot storySnap : snapshot.getChildren()) {
-                                    Story story = storySnap.getValue(Story.class);
-                                    story.setId(storySnap.getKey()); // Lấy ID thực sự của story
+        // Hiển thị thông tin truyện
+        holder.titleText.setText(story.getTitle());
 
-                                    Intent intent = new Intent(context, StoryDetailActivity.class);
-                                    intent.putExtra("story", story);
-                                    context.startActivity(intent);
-                                    return;
-                                }
-                            }
-                            Toast.makeText(context, "Không tìm thấy truyện", Toast.LENGTH_SHORT).show();
-                        }
+        // Hiển thị tiêu đề tiếng Việt nếu có
+        if (story.getTitleVi() != null && !story.getTitleVi().isEmpty()) {
+            holder.titleViText.setText(story.getTitleVi());
+            holder.titleViText.setVisibility(View.VISIBLE);
+        } else {
+            holder.titleViText.setVisibility(View.GONE);
+        }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            Toast.makeText(context, "Lỗi truy vấn", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        // Hiển thị tác giả
+        holder.authorText.setText(story.getAuthor());
+
+        // Hiển thị thể loại
+        if (story.getGenres() != null && !story.getGenres().isEmpty()) {
+            holder.genresText.setText(String.join(", ", story.getGenres()));
+        } else {
+            holder.genresText.setText("Không xác định");
+        }
+
+        // Hiển thị mô tả
+        holder.descriptionText.setText(story.getDescription());
+
+        // Hiển thị nguồn
+        holder.sourceText.setText("Nguồn: " + story.getSource());
+
+        // Tải ảnh bìa
+        Glide.with(context)
+                .load(story.getImageUrl())
+                .apply(new RequestOptions()
+                        .placeholder(R.drawable.placeholder_book)
+                        .error(R.drawable.placeholder_book))
+                .into(holder.coverImageView);
+
+        // Set click listeners
+        holder.viewDetailButton.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onViewDetailClick(story);
+            }
+        });
+
+        holder.downloadButton.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onDownloadClick(story);
+            }
         });
     }
 
@@ -88,15 +107,28 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
         return stories.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivCover;
-        TextView tvTitle, tvAuthor;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        public ImageView coverImageView;
+        public TextView titleText;
+        public TextView titleViText;
+        public TextView authorText;
+        public TextView genresText;
+        public TextView descriptionText;
+        public TextView sourceText;
+        public MaterialButton viewDetailButton;
+        public MaterialButton downloadButton;
 
-        ViewHolder(@NonNull View itemView) {
+        public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivCover = itemView.findViewById(R.id.ivSearchCover);
-            tvTitle = itemView.findViewById(R.id.tvSearchTitle);
-            tvAuthor = itemView.findViewById(R.id.tvSearchAuthor);
+            coverImageView = itemView.findViewById(R.id.coverImageView);
+            titleText = itemView.findViewById(R.id.titleText);
+            titleViText = itemView.findViewById(R.id.titleViText);
+            authorText = itemView.findViewById(R.id.authorText);
+            genresText = itemView.findViewById(R.id.genresText);
+            descriptionText = itemView.findViewById(R.id.descriptionText);
+            sourceText = itemView.findViewById(R.id.sourceText);
+            viewDetailButton = itemView.findViewById(R.id.viewDetailButton);
+            downloadButton = itemView.findViewById(R.id.downloadButton);
         }
     }
 }
