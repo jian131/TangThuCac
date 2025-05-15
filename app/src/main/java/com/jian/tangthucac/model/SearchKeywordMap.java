@@ -1,34 +1,55 @@
 package com.jian.tangthucac.model;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Model lưu trữ ánh xạ từ khóa tìm kiếm giữa các ngôn ngữ
+ * Lớp model chứa ánh xạ từ khóa tìm kiếm giữa tiếng Việt và tiếng Trung
  */
 public class SearchKeywordMap implements Serializable {
-    private String id;                      // ID ánh xạ
-    private String vietnameseKeyword;       // Từ khóa tiếng Việt gốc
-    private String chineseKeyword;          // Từ khóa tiếng Trung đã dịch
-    private String englishKeyword;          // Từ khóa tiếng Anh đã dịch
-    private Map<String, String> otherLanguages; // Các ngôn ngữ khác (code: keyword)
-    private int useCount;                   // Số lần sử dụng từ khóa
-    private long lastUsedTime;              // Thời gian sử dụng gần nhất
-    private String translationEngine;       // Công cụ dịch sử dụng
+    private String id;
+    private String vietnameseKeyword;
+    private String chineseKeyword;
+    private String englishKeyword;
+    private long timestamp;
+    private int useCount;
 
+    /**
+     * Constructor rỗng cần thiết cho serialization
+     */
     public SearchKeywordMap() {
-        // Required empty constructor for Firebase
+        this.timestamp = System.currentTimeMillis();
+        this.useCount = 0;
     }
 
-    // Tạo constructor thuận tiện
+    /**
+     * Constructor với từ khóa tiếng Việt và tiếng Trung
+     * @param vietnameseKeyword Từ khóa tiếng Việt
+     * @param chineseKeyword Từ khóa tiếng Trung tương ứng
+     */
     public SearchKeywordMap(String vietnameseKeyword, String chineseKeyword) {
         this.vietnameseKeyword = vietnameseKeyword;
         this.chineseKeyword = chineseKeyword;
+        this.timestamp = System.currentTimeMillis();
         this.useCount = 0;
-        this.lastUsedTime = System.currentTimeMillis();
+        // Tạo ID dựa trên từ khóa tiếng Việt
+        this.id = vietnameseKeyword.toLowerCase().replace(" ", "_");
     }
 
-    // Getters & Setters
+    /**
+     * Constructor đầy đủ
+     * @param vietnameseKeyword Từ khóa tiếng Việt
+     * @param chineseKeyword Từ khóa tiếng Trung
+     * @param englishKeyword Từ khóa tiếng Anh
+     */
+    public SearchKeywordMap(String vietnameseKeyword, String chineseKeyword, String englishKeyword) {
+        this(vietnameseKeyword, chineseKeyword);
+        this.englishKeyword = englishKeyword;
+    }
+
+    // Getters và setters
+
     public String getId() {
         return id;
     }
@@ -61,12 +82,12 @@ public class SearchKeywordMap implements Serializable {
         this.englishKeyword = englishKeyword;
     }
 
-    public Map<String, String> getOtherLanguages() {
-        return otherLanguages;
+    public long getTimestamp() {
+        return timestamp;
     }
 
-    public void setOtherLanguages(Map<String, String> otherLanguages) {
-        this.otherLanguages = otherLanguages;
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     public int getUseCount() {
@@ -77,24 +98,99 @@ public class SearchKeywordMap implements Serializable {
         this.useCount = useCount;
     }
 
+    /**
+     * Tăng số lần sử dụng từ khóa
+     */
     public void incrementUseCount() {
         this.useCount++;
-        this.lastUsedTime = System.currentTimeMillis();
+        this.timestamp = System.currentTimeMillis();
     }
 
+    /**
+     * Cập nhật timestamp
+     */
+    public void updateTimestamp() {
+        this.timestamp = System.currentTimeMillis();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SearchKeywordMap that = (SearchKeywordMap) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (vietnameseKeyword != null ? !vietnameseKeyword.equals(that.vietnameseKeyword) : that.vietnameseKeyword != null)
+            return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (vietnameseKeyword != null ? vietnameseKeyword.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "SearchKeywordMap{" +
+                "vietnameseKeyword='" + vietnameseKeyword + '\'' +
+                ", chineseKeyword='" + chineseKeyword + '\'' +
+                ", useCount=" + useCount +
+                '}';
+    }
+
+    // ==== Phương thức tương thích ngược với mã cũ ====
+
+    /**
+     * Phương thức tương thích ngược - lấy thời gian sử dụng gần nhất
+     */
     public long getLastUsedTime() {
-        return lastUsedTime;
+        return timestamp;
     }
 
+    /**
+     * Phương thức tương thích ngược - đặt thời gian sử dụng gần nhất
+     */
     public void setLastUsedTime(long lastUsedTime) {
-        this.lastUsedTime = lastUsedTime;
+        this.timestamp = lastUsedTime;
     }
 
-    public String getTranslationEngine() {
-        return translationEngine;
-    }
-
+    /**
+     * Phương thức tương thích ngược - đặt công cụ dịch
+     */
     public void setTranslationEngine(String translationEngine) {
-        this.translationEngine = translationEngine;
+        // SearchKeywordMap không còn lưu trữ thông tin này
+        // nhưng giữ lại phương thức để tương thích với mã cũ
+    }
+
+    /**
+     * Phương thức tương thích ngược - lấy công cụ dịch
+     */
+    public String getTranslationEngine() {
+        // Giá trị mặc định
+        return "Claude";
+    }
+
+    /**
+     * Phương thức tương thích ngược - đặt các ngôn ngữ khác
+     */
+    public void setOtherLanguages(Map<String, String> otherLanguages) {
+        // SearchKeywordMap không còn lưu trữ thông tin này
+        // nhưng giữ lại phương thức để tương thích với mã cũ
+    }
+
+    /**
+     * Phương thức tương thích ngược - lấy các ngôn ngữ khác
+     */
+    public Map<String, String> getOtherLanguages() {
+        Map<String, String> otherLangs = new HashMap<>();
+        if (englishKeyword != null) {
+            otherLangs.put("en", englishKeyword);
+        }
+        return otherLangs;
     }
 }

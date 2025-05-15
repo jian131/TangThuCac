@@ -1,8 +1,0 @@
-dependencies {
-    // ... existing code ...
-
-    // WorkManager
-    implementation "androidx.work:work-runtime:2.8.1"
-
-    // ... existing code ...
-}

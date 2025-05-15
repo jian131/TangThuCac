@@ -16,6 +16,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.content.SharedPreferences;
+import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,7 +32,7 @@ import com.jian.tangthucac.API.ChineseNovelManager;
 import com.jian.tangthucac.API.TranslationService;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.model.TranslatedChapter;
-import com.jian.tangthucac.util.ContentNormalizer;
+import com.jian.tangthucac.utils.ContentNormalizer;
 import com.jian.tangthucac.worker.ChapterPreloadWorker;
 
 import java.util.Locale;
@@ -50,6 +52,7 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
     // Data
     private String storyId;
     private String chapterId;
+    private String title;
     private TranslatedChapter chapter;
     private ChineseNovelManager novelManager;
 
@@ -63,6 +66,13 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
 
     // Language mode
     private boolean showingVietnamese = true;
+
+    private WebView contentWebView;
+    private boolean showChinese = true;
+    private boolean showVietnamese = true;
+    private int chineseFontSize = 18;
+    private int vietFontSize = 18;
+    private boolean isDarkMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -626,5 +636,22 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
         WorkManager.getInstance(getApplicationContext()).enqueue(preloadRequest);
 
         Log.d(TAG, "Đã lên lịch tải trước các chương tiếp theo");
+    }
+
+    /**
+     * Hiển thị thông báo Toast
+     * @param message Nội dung thông báo
+     */
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Cập nhật số lần xem cho chương
+     * @param chapter Chương cần cập nhật
+     */
+    private void updateViewCount(TranslatedChapter chapter) {
+        // Implementation của việc cập nhật view count
+        // (có thể là trống trong trường hợp này vì không còn cần thiết)
     }
 }

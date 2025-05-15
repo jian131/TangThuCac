@@ -30,6 +30,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // Kích hoạt view binding
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -97,4 +102,7 @@ dependencies {
 
     // ✅ Thêm ViewBinding
     implementation("androidx.databinding:viewbinding:8.1.0")
+
+    // ✅ SwipeRefreshLayout cho pull-to-refresh
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }
