@@ -104,6 +104,11 @@ public class ChineseNovelManager {
         void onError(Exception e);
     }
 
+    // Thêm interface cho việc xử lý empty state
+    public interface EmptyStateListener {
+        void onEmptyState(boolean isEmpty);
+    }
+
     private ChineseNovelManager() {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         originalStoriesRef = database.getReference("chinese_novels");
@@ -654,10 +659,10 @@ public class ChineseNovelManager {
         }
     }
 
-    private void showEmptyState() {
-        loadingView.setVisibility(View.GONE);
-        recyclerView.setVisibility(View.GONE);
-        tvEmptyState.setVisibility(View.VISIBLE);
+    private void notifyEmptyState(EmptyStateListener listener) {
+        if (listener != null) {
+            listener.onEmptyState(true);
+        }
     }
 
     /**
