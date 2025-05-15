@@ -277,7 +277,11 @@ public class TranslationService {
      */
     public void translateWithDeepL(String text, String sourceLanguage, String targetLanguage, OnTranslationListener listener) {
         if (deeplApiKey == null || deeplApiKey.isEmpty()) {
-            listener.onError(new Exception("DeepL API key chưa được cấu hình"));
+            // Thêm xử lý dự phòng - trả về văn bản gốc kèm thông báo lỗi
+            Log.w(TAG, "DeepL API key chưa được cấu hình - trả về văn bản gốc");
+            // Tạo thông báo ở đầu văn bản về lỗi API
+            String fallbackText = "[API CHƯA ĐƯỢC CẤU HÌNH] " + text;
+            listener.onTranslationCompleted(fallbackText);
             return;
         }
 

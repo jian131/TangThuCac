@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.adapter;
 
 import android.content.Context;
@@ -58,12 +57,11 @@ public class GenreStoryAdapter extends RecyclerView.Adapter<GenreStoryAdapter.Ge
         // Thêm sự kiện click để chuyển sang StoryDetailActivity
         holder.itemView.setOnClickListener(v -> {
             Log.d("RecyclerView", "Clicked on: " + story.getTitle());
-            if (story != null) {
-                Intent intent = new Intent(context, StoryDetailActivity.class);
-                intent.putExtra("story", story);
-                context.startActivity(intent);
+            if (story != null && story.getId() != null) {
+                // Sử dụng phương thức static start của StoryDetailActivity
+                StoryDetailActivity.start(context, story.getId());
             } else {
-                Log.e("RecyclerView", "Story is null!");
+                Log.e("RecyclerView", "Story is null or ID is missing!");
             }
         });
     }

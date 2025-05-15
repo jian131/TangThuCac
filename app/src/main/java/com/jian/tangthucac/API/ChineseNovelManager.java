@@ -44,11 +44,13 @@ public class ChineseNovelManager {
     private final DatabaseReference originalStoriesRef;
     private final DatabaseReference translatedChaptersRef;
     private final DatabaseReference keywordMapsRef;
+    private final DatabaseReference searchKeywordsRef;
 
     // Cache for stories and translations
     private final Map<String, OriginalStory> storiesCache;
     private final Map<String, TranslatedChapter> chaptersCache;
     private final Map<String, SearchKeywordMap> keywordCache;
+    private final Map<String, SearchKeywordMap> keywordsCache;
 
     // LRU cache cho tối ưu hiệu suất
     private final Map<String, Long> cacheAccessTime;
@@ -114,10 +116,12 @@ public class ChineseNovelManager {
         originalStoriesRef = database.getReference("chinese_novels");
         translatedChaptersRef = database.getReference("translated_chapters");
         keywordMapsRef = database.getReference("keyword_maps");
+        searchKeywordsRef = database.getReference("search_keywords");
 
         storiesCache = new HashMap<>();
         chaptersCache = new HashMap<>();
         keywordCache = new HashMap<>();
+        keywordsCache = new HashMap<>();
         cacheAccessTime = new HashMap<>();
 
         gson = new Gson();
@@ -576,6 +580,7 @@ public class ChineseNovelManager {
         storiesCache.clear();
         chaptersCache.clear();
         keywordCache.clear();
+        keywordsCache.clear();
         if (preferences != null) {
             preferences.edit().clear().apply();
         }
@@ -833,5 +838,37 @@ public class ChineseNovelManager {
                 listener.onError(error.toException());
             }
         });
+    }
+
+    /**
+     * Lưu từ khóa tìm kiếm mới
+     */
+    public void saveSearchKeyword(SearchKeywordMap keywordMap) {
+        if (keywordMap == null) return;
+
+        try {
+            // Tạo ID nếu chưa có
+            if (keywordMap.getId() == null || keywordMap.getId().isEmpty()) {
+                keywordMap.setId(searchKeywordsRef.push().getKey());
+            }
+
+            // Lưu vào Firebase và cache
+            searchKeywordsRef.child(keywordMap.getId()).setValue(keywordMap);
+            keywordsCache.put(keywordMap.getId(), keywordMap);
+
+            // Cập nhật thời gian truy cập cache
+            cacheAccessTime.put("keyword_" + keywordMap.getId(), System.currentTimeMillis());
+
+            // Lên lịch lưu cache
+            scheduledExecutor.schedule(
+                this::saveCacheToPreferences,
+                5,
+                TimeUnit.SECONDS
+            );
+
+            Log.d(TAG, "Đã lưu từ khóa tìm kiếm: " + keywordMap.getVietnameseKeyword() + " -> " + keywordMap.getChineseKeyword());
+        } catch (Exception e) {
+            Log.e(TAG, "Lỗi khi lưu từ khóa tìm kiếm: " + e.getMessage());
+        }
     }
 }

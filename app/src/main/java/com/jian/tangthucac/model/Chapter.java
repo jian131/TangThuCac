@@ -2,21 +2,24 @@ package com.jian.tangthucac.model;
 
 import java.io.Serializable;
 
+/**
+ * Model đại diện cho một chương trong truyện
+ */
 public class Chapter implements Serializable {
-    private String id;
     private String title;
     private String content;
-    private int views;
+    private int index;
+    private String id;
     private String url;
 
-    public Chapter() {}
-
-    public String getId() {
-        return id;
+    public Chapter() {
+        // Constructor mặc định cần thiết cho Firebase
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public Chapter(String title, String content, int index) {
+        this.title = title;
+        this.content = content;
+        this.index = index;
     }
 
     public String getTitle() {
@@ -35,12 +38,20 @@ public class Chapter implements Serializable {
         this.content = content;
     }
 
-    public int getViews() {
-        return views;
+    public int getIndex() {
+        return index;
     }
 
-    public void setViews(int views) {
-        this.views = views;
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUrl() {
@@ -49,5 +60,13 @@ public class Chapter implements Serializable {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @Override
+    public String toString() {
+        return "Chapter{" +
+                "title='" + title + '\'' +
+                ", index=" + index +
+                '}';
     }
 }

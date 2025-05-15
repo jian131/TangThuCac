@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -33,6 +34,7 @@ import java.util.List;
  */
 public class ChineseNovelSearchActivity extends AppCompatActivity {
 
+    private static final String TAG = "ChineseNovelSearch";
     private ActivityChineseNovelSearchBinding binding;
     private SearchResultAdapter adapter;
     private final List<OriginalStory> searchResults = new ArrayList<>();
@@ -169,70 +171,40 @@ public class ChineseNovelSearchActivity extends AppCompatActivity {
         else if (detectedLanguage.equals(TranslationService.LANGUAGE_VI)) {
             binding.searchStatusText.setText("Đang dịch từ khóa sang tiếng Trung...");
 
-            // Tìm ánh xạ từ khóa đã có
-            novelManager.findKeywordMapping(keyword, new ChineseNovelManager.OnKeywordMappedListener() {
-                @Override
-                public void onKeywordMapped(SearchKeywordMap keywordMap) {
-                    runOnUiThread(() -> {
-                        translatedKeyword = keywordMap.getChineseKeyword();
-                        binding.detectedLanguageText.setText("Đã nhận diện: Tiếng Việt → đã dịch sang Tiếng Trung: " + translatedKeyword);
-                        binding.detectedLanguageText.setVisibility(View.VISIBLE);
-                        binding.searchStatusText.setText("Đang tìm kiếm truyện...");
+            // Kiểm tra DeepL API key trước khi dịch
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            String deeplApiKey = prefs.getString("deepl_api_key", "");
 
-                        // Tìm truyện với từ khóa đã dịch
-                        searchNovelsByKeyword(translatedKeyword);
-                    });
-                }
+            if (deeplApiKey.isEmpty()) {
+                // Nếu không có API key, hiển thị thông báo nhưng vẫn tiếp tục tìm kiếm với từ khóa tiếng Việt
+                Toast.makeText(this, "DeepL API chưa được cấu hình. Kết quả tìm kiếm có thể không chính xác.", Toast.LENGTH_LONG).show();
+                searchWithKeyword(keyword, getSelectedSource());
+                return;
+            }
 
-                @Override
-                public void onError(Exception e) {
-                    // Không tìm thấy ánh xạ đã có, dịch mới
-                    translationService.translateKeyword(keyword, TranslationService.LANGUAGE_VI,
-                            TranslationService.LANGUAGE_ZH, new TranslationService.OnKeywordTranslationListener() {
+            // Tiếp tục với quy trình dịch và tìm kiếm bình thường
+            translationService.initialize(this, null, deeplApiKey);
+
+            // Dịch từ khóa sang tiếng Trung
+            translationService.translateKeyword(keyword, TranslationService.LANGUAGE_VI, TranslationService.LANGUAGE_ZH,
+                    new TranslationService.OnKeywordTranslationListener() {
                         @Override
                         public void onKeywordTranslated(SearchKeywordMap keywordMap) {
-                            // Lưu ánh xạ mới vào database
-                            novelManager.saveKeywordMapping(keywordMap, new ChineseNovelManager.OnKeywordMappedListener() {
-                                @Override
-                                public void onKeywordMapped(SearchKeywordMap savedKeywordMap) {
-                                    runOnUiThread(() -> {
-                                        translatedKeyword = savedKeywordMap.getChineseKeyword();
-                                        binding.detectedLanguageText.setText("Đã nhận diện: Tiếng Việt → đã dịch sang Tiếng Trung: " + translatedKeyword);
-                                        binding.detectedLanguageText.setVisibility(View.VISIBLE);
-                                        binding.searchStatusText.setText("Đang tìm kiếm truyện...");
+                            // Lưu từ khóa tìm kiếm
+                            novelManager.saveSearchKeyword(keywordMap);
 
-                                        // Tìm truyện với từ khóa đã dịch
-                                        searchNovelsByKeyword(translatedKeyword);
-                                    });
-                                }
-
-                                @Override
-                                public void onError(Exception e) {
-                                    // Vẫn tiếp tục tìm kiếm ngay cả khi không lưu được
-                                    runOnUiThread(() -> {
-                                        translatedKeyword = keywordMap.getChineseKeyword();
-                                        binding.detectedLanguageText.setText("Đã nhận diện: Tiếng Việt → đã dịch sang Tiếng Trung: " + translatedKeyword);
-                                        binding.detectedLanguageText.setVisibility(View.VISIBLE);
-                                        binding.searchStatusText.setText("Đang tìm kiếm truyện...");
-
-                                        // Tìm truyện với từ khóa đã dịch
-                                        searchNovelsByKeyword(translatedKeyword);
-                                    });
-                                }
-                            });
+                            // Thực hiện tìm kiếm với từ khóa đã dịch
+                            String chineseKeyword = keywordMap.getChineseKeyword();
+                            searchWithKeyword(chineseKeyword, getSelectedSource());
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            runOnUiThread(() -> {
-                                binding.progressBar.setVisibility(View.GONE);
-                                binding.searchStatusText.setText("Lỗi dịch từ khóa: " + e.getMessage());
-                                isSearching = false;
-                            });
+                            // Xử lý lỗi: tìm kiếm với từ khóa tiếng Việt
+                            Log.e(TAG, "Lỗi dịch từ khóa: " + e.getMessage());
+                            searchWithKeyword(keyword, getSelectedSource());
                         }
                     });
-                }
-            });
         }
         // Ngôn ngữ khác (ví dụ tiếng Anh), cũng dịch sang tiếng Trung
         else {
@@ -384,6 +356,22 @@ public class ChineseNovelSearchActivity extends AppCompatActivity {
                 return langCode;
         }
     }
+
+    /**
+     * Tìm kiếm truyện với từ khóa đã chỉ định và nguồn
+     */
+    private void searchWithKeyword(String keyword, String source) {
+        runOnUiThread(() -> {
+            binding.detectedLanguageText.setText("Tìm kiếm với từ khóa: " + keyword);
+            binding.detectedLanguageText.setVisibility(View.VISIBLE);
+            binding.searchStatusText.setText("Đang tìm kiếm truyện...");
+            searchNovelsByKeyword(keyword);
+        });
+    }
+
+    /**
+     * Tìm kiếm truyện với từ khóa đã chỉ định
+     */
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {

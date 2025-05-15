@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.jian.tangthucac.API.ChineseNovelManager;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.activity.ChineseNovelSearchActivity;
+import com.jian.tangthucac.activity.StoryDetailActivity;
 import com.jian.tangthucac.adapter.ChapterAdapter;
 import com.jian.tangthucac.adapter.SearchResultAdapter;
 import com.jian.tangthucac.model.OriginalStory;
@@ -187,51 +188,32 @@ public class ChineseNovelFragment extends Fragment {
     }
 
     private void updateEmptyState() {
-        if (popularNovels.isEmpty() && recentNovels.isEmpty()) {
-            // Hiển thị trạng thái trống
+        // Kiểm tra nếu không có dữ liệu
+        boolean isEmpty = popularNovels.isEmpty() && recentNovels.isEmpty();
+
+        // Hiển thị hoặc ẩn trạng thái trống
+        if (isEmpty) {
+            emptyStateLayout.setVisibility(View.VISIBLE);
             popularNovelsRecyclerView.setVisibility(View.GONE);
             recentNovelsRecyclerView.setVisibility(View.GONE);
-            emptyStateLayout.setVisibility(View.VISIBLE);
-            emptyStateText.setText("Không có truyện Trung Quốc nào. Hãy tìm kiếm và thêm truyện.");
         } else {
-            // Hiển thị dữ liệu
+            emptyStateLayout.setVisibility(View.GONE);
             popularNovelsRecyclerView.setVisibility(View.VISIBLE);
             recentNovelsRecyclerView.setVisibility(View.VISIBLE);
-            emptyStateLayout.setVisibility(View.GONE);
         }
     }
 
     private void openStoryDetail(OriginalStory story) {
-        // Mở activity xem chi tiết truyện
-        if (story != null && getContext() != null) {
-            // Sử dụng helper method từ StoryDetailActivity
-            com.jian.tangthucac.activity.StoryDetailActivity.start(getContext(), story.getId());
+        if (story != null && story.getId() != null) {
+            StoryDetailActivity.start(getContext(), story.getId());
+        } else {
+            Toast.makeText(getContext(), "Không thể mở truyện, thiếu thông tin ID", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void downloadStory(OriginalStory story) {
-        // Tải truyện
-        if (story != null) {
-            novelManager.saveOriginalStory(story, new ChineseNovelManager.OnStoryLoadedListener() {
-                @Override
-                public void onStoryLoaded(OriginalStory savedStory) {
-                    if (isAdded() && getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
-                            Toast.makeText(getContext(), "Đã lưu truyện " + story.getTitle(), Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    if (isAdded() && getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
-                            Toast.makeText(getContext(), "Lỗi khi lưu truyện: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                }
-            });
-        }
+        // TODO: Triển khai tính năng tải xuống truyện
+        Toast.makeText(getContext(), "Tính năng tải xuống đang được phát triển", Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -19,6 +19,7 @@ import androidx.fragment.app.Fragment;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.preference.PreferenceManager;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.widget.NestedScrollView;
 
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.activity.ChineseNovelSearchActivity;
@@ -62,6 +63,12 @@ public class UserFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_user, container, false);
+
+        // Đảm bảo NestedScrollView hoạt động đúng
+        androidx.core.widget.NestedScrollView scrollView = view.findViewById(R.id.userScrollView);
+        if (scrollView != null) {
+            scrollView.setFillViewport(true);
+        }
 
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
@@ -225,8 +232,16 @@ public class UserFragment extends Fragment {
     }
 
     private void openApiSettings() {
-        Intent intent = new Intent(getActivity(), ApiSettingsActivity.class);
-        startActivity(intent);
+        // Hiển thị thông báo để biết người dùng đã nhấp vào nút
+        Toast.makeText(getContext(), "Đang mở cài đặt API...", Toast.LENGTH_SHORT).show();
+
+        try {
+            Intent intent = new Intent(getActivity(), ApiSettingsActivity.class);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Lỗi khi mở ApiSettingsActivity: " + e.getMessage());
+            Toast.makeText(getContext(), "Không thể mở cài đặt API. Lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void updateUI(FirebaseUser user) {

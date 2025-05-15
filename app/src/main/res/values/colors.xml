@@ -61,4 +61,6 @@
     <color name="bottom_nav_unselected_light">#78909C</color>
     <color name="bottom_nav_selected_dark">@color/primary_night</color>
     <color name="bottom_nav_unselected_dark">#78909C</color>
+
+    <color name="warning_text">#D86018</color>
 </resources>

@@ -49,9 +49,8 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         holder.itemView.setOnClickListener(v -> {
             Log.d("RecyclerView", "Clicked on: " + story.getTitle());
             if (story != null && story.getId() != null) {
-                Intent intent = new Intent(context, StoryDetailActivity.class);
-                intent.putExtra("story_id", story.getId());
-                context.startActivity(intent);
+                // Sử dụng phương thức static start của StoryDetailActivity
+                StoryDetailActivity.start(context, story.getId());
             } else {
                 Log.e("RecyclerView", "Story ID is missing!");
             }

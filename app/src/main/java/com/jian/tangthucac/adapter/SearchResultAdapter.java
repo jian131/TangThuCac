@@ -16,6 +16,7 @@ import com.google.android.material.button.MaterialButton;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.model.OriginalStory;
 import com.jian.tangthucac.model.Story;
+import com.jian.tangthucac.activity.StoryDetailActivity;
 
 import java.util.List;
 
@@ -70,45 +71,36 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         OriginalStory story = stories.get(position);
 
-        // Hiển thị thông tin truyện
+        // Hiển thị thông tin
         holder.titleText.setText(story.getTitle());
+        holder.authorText.setText("Tác giả: " + story.getAuthor());
 
-        // Hiển thị tiêu đề tiếng Việt nếu có
-        if (story.getTitleVi() != null && !story.getTitleVi().isEmpty()) {
-            holder.titleViText.setText(story.getTitleVi());
-            holder.titleViText.setVisibility(View.VISIBLE);
+        if (story.getDescription() != null && !story.getDescription().isEmpty()) {
+            holder.descriptionText.setText(story.getDescription());
+            holder.descriptionText.setVisibility(View.VISIBLE);
         } else {
-            holder.titleViText.setVisibility(View.GONE);
+            holder.descriptionText.setVisibility(View.GONE);
         }
 
-        // Hiển thị tác giả
-        holder.authorText.setText(story.getAuthor());
-
-        // Hiển thị thể loại
-        if (story.getGenres() != null && !story.getGenres().isEmpty()) {
-            holder.genresText.setText(String.join(", ", story.getGenres()));
+        // Tải hình ảnh
+        if (story.getImageUrl() != null && !story.getImageUrl().isEmpty()) {
+            Glide.with(context)
+                    .load(story.getImageUrl())
+                    .apply(new RequestOptions()
+                            .placeholder(R.drawable.placeholder_book)
+                            .error(R.drawable.error_image))
+                    .into(holder.coverImage);
         } else {
-            holder.genresText.setText("Không xác định");
+            holder.coverImage.setImageResource(R.drawable.placeholder_book);
         }
 
-        // Hiển thị mô tả
-        holder.descriptionText.setText(story.getDescription());
-
-        // Hiển thị nguồn
-        holder.sourceText.setText("Nguồn: " + story.getSource());
-
-        // Tải ảnh bìa
-        Glide.with(context)
-                .load(story.getImageUrl())
-                .apply(new RequestOptions()
-                        .placeholder(R.drawable.placeholder_book)
-                        .error(R.drawable.placeholder_book))
-                .into(holder.coverImageView);
-
-        // Set click listeners
+        // Thiết lập sự kiện click
         holder.viewDetailButton.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onViewDetailClick(story);
+            } else if (story != null && story.getId() != null) {
+                // Fallback khi không có listener
+                StoryDetailActivity.start(context, story.getId());
             }
         });
 
@@ -125,25 +117,19 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public ImageView coverImageView;
+        public ImageView coverImage;
         public TextView titleText;
-        public TextView titleViText;
         public TextView authorText;
-        public TextView genresText;
         public TextView descriptionText;
-        public TextView sourceText;
         public MaterialButton viewDetailButton;
         public MaterialButton downloadButton;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            coverImageView = itemView.findViewById(R.id.coverImageView);
+            coverImage = itemView.findViewById(R.id.coverImageView);
             titleText = itemView.findViewById(R.id.titleText);
-            titleViText = itemView.findViewById(R.id.titleViText);
             authorText = itemView.findViewById(R.id.authorText);
-            genresText = itemView.findViewById(R.id.genresText);
             descriptionText = itemView.findViewById(R.id.descriptionText);
-            sourceText = itemView.findViewById(R.id.sourceText);
             viewDetailButton = itemView.findViewById(R.id.viewDetailButton);
             downloadButton = itemView.findViewById(R.id.downloadButton);
         }

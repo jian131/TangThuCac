@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.adapter;
 
 import android.content.Context;
@@ -64,9 +63,8 @@ public class LibraryAdapter extends RecyclerView.Adapter<LibraryAdapter.LibraryV
                                     Story story = storySnap.getValue(Story.class);
                                     story.setId(storySnap.getKey()); // Lấy ID thực sự của story
 
-                                    Intent intent = new Intent(context, StoryDetailActivity.class);
-                                    intent.putExtra("story", story);
-                                    context.startActivity(intent);
+                                    // Sử dụng phương thức static start của StoryDetailActivity
+                                    StoryDetailActivity.start(context, story.getId());
                                     return;
                                 }
                             }

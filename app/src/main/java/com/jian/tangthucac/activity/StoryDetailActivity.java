@@ -12,12 +12,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.jian.tangthucac.API.ChineseNovelManager;
 import com.jian.tangthucac.API.NovelCrawler;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.adapter.ChapterAdapter;
 import com.jian.tangthucac.databinding.ActivityStoryDetailBinding;
+import com.jian.tangthucac.model.Chapter;
 import com.jian.tangthucac.model.OriginalStory;
+import com.jian.tangthucac.model.Story;
 import com.jian.tangthucac.model.TranslatedChapter;
 
 import java.util.ArrayList;
@@ -165,11 +172,110 @@ public class StoryDetailActivity extends AppCompatActivity {
 
             @Override
             public void onError(Exception e) {
-                Toast.makeText(StoryDetailActivity.this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                // Kiểm tra nếu activity chưa bị destroy
+                if (!isFinishing()) {
+                    Toast.makeText(StoryDetailActivity.this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    binding.downloadProgressBar.setVisibility(View.GONE);
+
+                    // Kiểm tra nếu là lỗi "Story not found", thử lấy thông tin từ Firebase Realtime Database
+                    if (e.getMessage() != null && e.getMessage().contains("Story not found")) {
+                        loadStoryFromStandardDatabase();
+                    } else {
+                        finish();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Tải thông tin truyện từ Firebase Realtime Database tiêu chuẩn
+     * trong trường hợp không tìm thấy ở ChineseNovelManager
+     */
+    private void loadStoryFromStandardDatabase() {
+        // Hiển thị loading
+        binding.downloadProgressBar.setVisibility(View.VISIBLE);
+
+        DatabaseReference storiesRef = FirebaseDatabase.getInstance().getReference("stories").child(storyId);
+        storiesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    Story standardStory = snapshot.getValue(Story.class);
+                    if (standardStory != null) {
+                        standardStory.setId(snapshot.getKey());
+
+                        // Chuyển đổi từ Story sang OriginalStory
+                        story = new OriginalStory();
+                        story.setId(standardStory.getId());
+                        story.setTitle(standardStory.getTitle());
+                        story.setAuthor(standardStory.getAuthor());
+                        story.setDescription(standardStory.getDescription());
+                        story.setImageUrl(standardStory.getImageUrl() != null ?
+                                standardStory.getImageUrl() : standardStory.getImage());
+                        story.setTotalChapters(standardStory.getTotalChapters());
+
+                        // Hiển thị thông tin
+                        displayStoryDetails();
+
+                        // Lấy danh sách chương nếu có
+                        if (standardStory.getChapters() != null) {
+                            convertAndDisplayStandardChapters(standardStory.getChapters());
+                        } else {
+                            binding.downloadProgressBar.setVisibility(View.GONE);
+                            binding.chapterStatusText.setText("Đã tải: 0/0 chương • Đã dịch: 0 chương");
+                        }
+                    } else {
+                        binding.downloadProgressBar.setVisibility(View.GONE);
+                        Toast.makeText(StoryDetailActivity.this, "Không thể đọc dữ liệu truyện", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    binding.downloadProgressBar.setVisibility(View.GONE);
+                    Toast.makeText(StoryDetailActivity.this, "Không tìm thấy truyện trong hệ thống", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
                 binding.downloadProgressBar.setVisibility(View.GONE);
+                Toast.makeText(StoryDetailActivity.this, "Lỗi truy vấn: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
+    }
+
+    /**
+     * Chuyển đổi các chương từ Story tiêu chuẩn sang dạng TranslatedChapter
+     */
+    private void convertAndDisplayStandardChapters(Map<String, Chapter> chaptersMap) {
+        chapterList.clear();
+
+        if (chaptersMap != null) {
+            for (Map.Entry<String, Chapter> entry : chaptersMap.entrySet()) {
+                Chapter standardChapter = entry.getValue();
+                TranslatedChapter translatedChapter = new TranslatedChapter();
+
+                translatedChapter.setId(entry.getKey());
+                translatedChapter.setTitle(standardChapter.getTitle());
+                translatedChapter.setContent(standardChapter.getContent());
+                translatedChapter.setIndex(standardChapter.getIndex());
+                translatedChapter.setStoryId(storyId);
+
+                chapterList.add(translatedChapter);
+            }
+        }
+
+        // Cập nhật adapter
+        chapterAdapter.notifyDataSetChanged();
+
+        // Cập nhật UI
+        String chapterStatus = "Đã tải: " + chapterList.size() + "/" +
+                (story.getTotalChapters() > 0 ? story.getTotalChapters() : chapterList.size()) +
+                " chương • Đã dịch: " + chapterList.size() + " chương";
+        binding.chapterStatusText.setText(chapterStatus);
+
+        binding.downloadProgressBar.setVisibility(View.GONE);
     }
 
     private void displayStoryDetails() {

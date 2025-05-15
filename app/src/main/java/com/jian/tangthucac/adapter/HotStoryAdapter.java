@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.adapter;
 
 import android.content.Context;
@@ -54,9 +53,7 @@ public class HotStoryAdapter extends RecyclerView.Adapter<HotStoryAdapter.HotSto
         // Hot badge is shown for hot stories by default in layout
 
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, StoryDetailActivity.class);
-            intent.putExtra("story", story);
-            context.startActivity(intent);
+            StoryDetailActivity.start(context, story.getId());
         });
     }
 
