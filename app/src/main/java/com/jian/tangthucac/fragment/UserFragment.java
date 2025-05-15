@@ -8,13 +8,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.preference.PreferenceManager;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.activity.LoginActivity;
@@ -34,7 +34,7 @@ public class UserFragment extends Fragment {
     private TextView tvUserEmail, tvUserId;
     private Button btnLogin, btnLogout;
     private TextView fakeBtnLogin, fakeBtnSignup; // Sử dụng TextView làm nút
-    private LinearLayout loggedInLayout, notLoggedInLayout;
+    private ConstraintLayout loggedInLayout, notLoggedInLayout;
     private SwitchCompat switchDarkMode;
     private FirebaseAuth mAuth;
     private SharedPreferences sharedPreferences;

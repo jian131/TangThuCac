@@ -155,3 +155,14 @@ public class ChatActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             TextView titleView = findViewById(R.id.tvChatTitle);
             if (titleView != null) {
+                titleView.setText("AI Trợ Giúp - " + model);
+            }
+        }
+    }
+
+    private void addMessage(Message msg) {
+        messageList.add(msg);
+        adapter.notifyItemInserted(messageList.size() - 1);
+        chatRecycler.scrollToPosition(messageList.size() - 1);
+    }
+}

@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.adapter;
 
 import android.view.LayoutInflater;
@@ -65,7 +64,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         UserMessageHolder(View itemView) {
             super(itemView);
-            messageText = itemView.findViewById(R.id.tvUserMessage);
+            messageText = itemView.findViewById(R.id.tvMessage);
         }
     }
 
@@ -74,7 +73,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         BotMessageHolder(View itemView) {
             super(itemView);
-            messageText = itemView.findViewById(R.id.tvBotMessage);
+            messageText = itemView.findViewById(R.id.tvMessage);
         }
     }
 }
