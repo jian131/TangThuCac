@@ -146,6 +146,14 @@ public class StoryDetailActivity extends AppCompatActivity {
         novelManager.getOriginalStoryById(storyId, new ChineseNovelManager.OnStoryLoadedListener() {
             @Override
             public void onStoryLoaded(OriginalStory loadedStory) {
+                // Kiểm tra nếu loadedStory là null
+                if (loadedStory == null) {
+                    Toast.makeText(StoryDetailActivity.this, "Không tìm thấy thông tin truyện", Toast.LENGTH_SHORT).show();
+                    binding.downloadProgressBar.setVisibility(View.GONE);
+                    finish();
+                    return;
+                }
+
                 story = loadedStory;
 
                 // Hiển thị thông tin truyện
@@ -159,6 +167,7 @@ public class StoryDetailActivity extends AppCompatActivity {
             public void onError(Exception e) {
                 Toast.makeText(StoryDetailActivity.this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 binding.downloadProgressBar.setVisibility(View.GONE);
+                finish();
             }
         });
     }
@@ -235,8 +244,21 @@ public class StoryDetailActivity extends AppCompatActivity {
     }
 
     private void downloadAllChapters() {
+        // Kiểm tra biến story để tránh NullPointerException
+        if (story == null) {
+            Toast.makeText(this, "Thông tin truyện chưa được tải", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Lấy số lượng chương và kiểm tra hợp lệ
+        int chapterCount = story.getChapterCount();
+        if (chapterCount <= 0) {
+            Toast.makeText(this, "Không có chương nào để tải xuống", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Hiển thị thông báo tải xuống
-        Toast.makeText(this, "Bắt đầu tải " + story.getChapterCount() + " chương", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Bắt đầu tải " + chapterCount + " chương", Toast.LENGTH_SHORT).show();
 
         // TODO: Triển khai tải xuống tất cả các chương bằng WorkManager
         // Đây là một tác vụ nặng cần được thực hiện trong background

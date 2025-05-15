@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.activity;
 
 import android.annotation.SuppressLint;
@@ -49,10 +48,12 @@ public class MainActivity extends AppCompatActivity {
                 viewPager.setCurrentItem(0);
             } else if (itemId == R.id.nav_library) {
                 viewPager.setCurrentItem(1);
-            } else if (itemId == R.id.nav_genres) {
+            } else if (itemId == R.id.nav_chinese) {
                 viewPager.setCurrentItem(2);
-            } else if (itemId == R.id.nav_user) {
+            } else if (itemId == R.id.nav_genres) {
                 viewPager.setCurrentItem(3);
+            } else if (itemId == R.id.nav_user) {
+                viewPager.setCurrentItem(4);
             }
             isUserAction = true;
             return true;

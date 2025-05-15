@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_library"
         android:title="@string/navigation_library" />
     <item
+        android:id="@+id/nav_chinese"
+        android:icon="@drawable/ic_book"
+        android:title="Truyện TQ" />
+    <item
         android:id="@+id/nav_genres"
         android:icon="@drawable/ic_category"
         android:title="@string/navigation_genres" />

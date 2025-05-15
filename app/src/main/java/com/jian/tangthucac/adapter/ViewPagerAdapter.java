@@ -1,4 +1,3 @@
-
 package com.jian.tangthucac.adapter;
 
 import androidx.annotation.NonNull;
@@ -10,6 +9,7 @@ import com.jian.tangthucac.fragment.GenresFragment;
 import com.jian.tangthucac.fragment.HomeFragment;
 import com.jian.tangthucac.fragment.LibraryFragment;
 import com.jian.tangthucac.fragment.UserFragment;
+import com.jian.tangthucac.fragment.ChineseNovelFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +22,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
         // Thêm các Fragment vào danh sách
         fragmentList.add(new HomeFragment());
         fragmentList.add(new LibraryFragment());
+        fragmentList.add(new ChineseNovelFragment());
         fragmentList.add(new GenresFragment());
         fragmentList.add(new UserFragment());
     }
