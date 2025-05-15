@@ -1,6 +1,7 @@
 package com.jian.tangthucac.activity;
 
 import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -38,6 +39,17 @@ public class StoryDetailActivity extends AppCompatActivity {
     // Dữ liệu truyện
     private OriginalStory story;
     private String storyId;
+
+    /**
+     * Phương thức khởi động Activity từ bên ngoài
+     * @param context Context gọi activity
+     * @param storyId ID của truyện cần xem chi tiết
+     */
+    public static void start(Context context, String storyId) {
+        Intent intent = new Intent(context, StoryDetailActivity.class);
+        intent.putExtra("story_id", storyId);
+        context.startActivity(intent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

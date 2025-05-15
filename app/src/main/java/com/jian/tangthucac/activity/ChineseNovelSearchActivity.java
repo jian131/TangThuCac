@@ -297,7 +297,7 @@ public class ChineseNovelSearchActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onError(Exception e) {
+                public void onSearchError(Exception e) {
                     runOnUiThread(() -> {
                         binding.progressBar.setVisibility(View.GONE);
                         binding.searchStatusText.setText("Lỗi tìm kiếm: " + e.getMessage());
