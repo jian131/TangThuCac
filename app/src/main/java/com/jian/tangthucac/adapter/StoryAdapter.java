@@ -48,12 +48,12 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
 
         holder.itemView.setOnClickListener(v -> {
             Log.d("RecyclerView", "Clicked on: " + story.getTitle());
-            if (story != null) {
+            if (story != null && story.getId() != null) {
                 Intent intent = new Intent(context, StoryDetailActivity.class);
-                intent.putExtra("story", story);
+                intent.putExtra("story_id", story.getId());
                 context.startActivity(intent);
             } else {
-                Log.e("RecyclerView", "Story is null!");
+                Log.e("RecyclerView", "Story ID is missing!");
             }
         });
     }

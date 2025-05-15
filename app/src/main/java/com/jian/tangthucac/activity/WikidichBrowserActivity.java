@@ -26,6 +26,7 @@ import com.jian.tangthucac.R;
 import com.jian.tangthucac.adapter.ChapterAdapter;
 import com.jian.tangthucac.model.Chapter;
 import com.jian.tangthucac.model.Story;
+import com.jian.tangthucac.model.TranslatedChapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -152,9 +153,25 @@ public class WikidichBrowserActivity extends AppCompatActivity {
             chapterList.clear();
             chapterList.addAll(chapters.values());
 
-            ChapterAdapter adapter = new ChapterAdapter(this, chapterList, position -> {
-                Chapter chapter = chapterList.get(position);
-                loadChapterContent(chapter);
+            // Chuyển đổi từ Chapter sang TranslatedChapter nếu cần
+            List<TranslatedChapter> translatedChapters = new ArrayList<>();
+            for (Chapter chapter : chapterList) {
+                TranslatedChapter translatedChapter = new TranslatedChapter();
+                translatedChapter.setId(chapter.getId());
+                translatedChapter.setTitle(chapter.getTitle());
+                // Thêm các thông tin khác nếu cần
+                translatedChapters.add(translatedChapter);
+            }
+
+            ChapterAdapter adapter = new ChapterAdapter(this, translatedChapters);
+            adapter.setOnItemClickListener(chapter -> {
+                // Tìm Chapter tương ứng từ Id
+                for (Chapter originalChapter : chapterList) {
+                    if (originalChapter.getId().equals(chapter.getId())) {
+                        loadChapterContent(originalChapter);
+                        break;
+                    }
+                }
             });
 
             rvChapters.setAdapter(adapter);

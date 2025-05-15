@@ -1,93 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
+    android:layout_margin="4dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="12dp">
 
         <TextView
-            android:id="@+id/chapterTitleText"
-            android:layout_width="0dp"
+            android:id="@+id/chapterTitleTextView"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
-            app:layout_constraintEnd_toStartOf="@+id/translationStatusIcon"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="Chương 1: 一入江湖岁月催" />
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="Tên chương" />
 
-        <TextView
-            android:id="@+id/chapterTitleViText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-            android:textStyle="italic"
-            app:layout_constraintEnd_toStartOf="@+id/translationStatusIcon"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/chapterTitleText"
-            tools:text="Chương 1: Nhập giang hồ tuế nguyệt thôi" />
-
-        <ImageView
-            android:id="@+id/translationStatusIcon"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:contentDescription="Trạng thái dịch"
-            android:src="@android:drawable/ic_menu_help"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@android:color/darker_gray" />
-
-        <LinearLayout
-            android:id="@+id/downloadStatusLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/chapterTitleViText">
-
-            <TextView
-                android:id="@+id/downloadStatusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                tools:text="Đã tải" />
-
-            <ProgressBar
-                android:id="@+id/downloadProgressBar"
-                style="?android:attr/progressBarStyleSmall"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="4dp"
-                android:visibility="gone"
-                tools:visibility="visible" />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/lastReadText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:drawableStart="@android:drawable/presence_online"
-            android:drawablePadding="4dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-            android:textColor="@android:color/holo_green_dark"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/downloadStatusLayout"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/downloadStatusLayout"
-            tools:text="Đã đọc"
-            tools:visibility="visible" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

@@ -68,22 +68,49 @@ public class StoryDetailActivity extends AppCompatActivity {
         novelManager = ChineseNovelManager.getInstance();
         novelManager.initialize(getApplicationContext());
 
-        // Lấy storyId từ intent
-        storyId = getIntent().getStringExtra("story_id");
-        if (storyId == null) {
-            Toast.makeText(this, "Không tìm thấy ID truyện", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
         // Thiết lập RecyclerView cho danh sách chương
         setupRecyclerView();
 
         // Thiết lập listeners
         setupListeners();
 
-        // Tải thông tin truyện
-        loadStoryDetails();
+        // Kiểm tra dữ liệu truyện từ Intent
+        Intent intent = getIntent();
+        if (intent != null) {
+            // Ưu tiên kiểm tra nếu có truyền trực tiếp đối tượng Story
+            OriginalStory storyFromIntent = (OriginalStory) intent.getSerializableExtra("story");
+            if (storyFromIntent != null) {
+                // Lấy thông tin từ đối tượng Story được truyền vào
+                storyId = storyFromIntent.getId();
+
+                // Chuyển đổi từ Story sang OriginalStory nếu cần thiết
+                story = new OriginalStory();
+                story.setId(storyFromIntent.getId());
+                story.setTitle(storyFromIntent.getTitle());
+                story.setAuthor(storyFromIntent.getAuthor());
+                story.setDescription(storyFromIntent.getDescription());
+                story.setImageUrl(storyFromIntent.getImageUrl());
+
+                // Hiển thị thông tin và tải chương sách
+                displayStoryDetails();
+                loadChapters();
+                return;
+            }
+
+            // Nếu không có đối tượng Story, thử lấy storyId
+            storyId = intent.getStringExtra("story_id");
+            if (storyId == null || storyId.isEmpty()) {
+                Toast.makeText(this, "Không tìm thấy ID truyện", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+
+            // Tải thông tin truyện từ id
+            loadStoryDetails();
+        } else {
+            Toast.makeText(this, "Không tìm thấy thông tin truyện", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
 
     private void setupRecyclerView() {

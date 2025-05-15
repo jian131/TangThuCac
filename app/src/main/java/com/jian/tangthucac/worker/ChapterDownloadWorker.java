@@ -86,11 +86,11 @@ public class ChapterDownloadWorker extends Worker {
                                         savedChapter,
                                         TranslationService.LANGUAGE_ZH,
                                         TranslationService.LANGUAGE_VI,
-                                        new TranslationService.OnTranslationListener() {
+                                        new TranslationService.OnContentTranslationListener() {
                                             @Override
-                                            public void onTranslationCompleted(String translatedText) {
+                                            public void onContentTranslated(TranslatedChapter translatedChapter) {
                                                 // Cập nhật chương đã dịch vào database
-                                                novelManager.saveTranslatedChapter(savedChapter, new ChineseNovelManager.OnChapterLoadedListener() {
+                                                novelManager.saveTranslatedChapter(translatedChapter, new ChineseNovelManager.OnChapterLoadedListener() {
                                                     @Override
                                                     public void onChapterLoaded(TranslatedChapter finalChapter) {
                                                         // Cập nhật thông tin chương trong story
