@@ -85,4 +85,16 @@ dependencies {
     // ✅ Room Database cho caching
     implementation("androidx.room:room-runtime:2.6.1")
     annotationProcessor("androidx.room:room-compiler:2.6.1")
+
+    // ✅ Thêm các thư viện JSON thiếu
+    implementation("org.json:json:20231013")
+
+    // ✅ Volley cho HTTP requests
+    implementation("com.android.volley:volley:1.2.1")
+
+    // ✅ WorkManager cho background tasks
+    implementation("androidx.work:work-runtime:2.8.1")
+
+    // ✅ Thêm ViewBinding
+    implementation("androidx.databinding:viewbinding:8.1.0")
 }

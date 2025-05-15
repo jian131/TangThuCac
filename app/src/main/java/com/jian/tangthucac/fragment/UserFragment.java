@@ -24,6 +24,7 @@ import com.jian.tangthucac.activity.ChineseNovelSearchActivity;
 import com.jian.tangthucac.activity.LoginActivity;
 import com.jian.tangthucac.activity.SignUpActivity;
 import com.jian.tangthucac.activity.WikidichBrowserActivity;
+import com.jian.tangthucac.activity.ApiSettingsActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -158,6 +159,9 @@ public class UserFragment extends Fragment {
         } else if (id == R.id.action_chinese_novel_search) {
             openChineseNovelSearch();
             return true;
+        } else if (id == R.id.action_api_settings) {
+            openApiSettings();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -169,6 +173,11 @@ public class UserFragment extends Fragment {
 
     private void openChineseNovelSearch() {
         Intent intent = new Intent(getActivity(), ChineseNovelSearchActivity.class);
+        startActivity(intent);
+    }
+
+    private void openApiSettings() {
+        Intent intent = new Intent(getActivity(), ApiSettingsActivity.class);
         startActivity(intent);
     }
 

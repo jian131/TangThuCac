@@ -39,6 +39,9 @@
         <activity
             android:name=".activity.ChineseNovelSearchActivity"
             android:label="Tìm kiếm truyện Trung Quốc" />
+        <activity
+            android:name=".activity.ApiSettingsActivity"
+            android:label="Cài đặt API" />
 
         <!-- Firebase auth activity for Google Sign In -->
         <activity

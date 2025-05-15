@@ -11,4 +11,9 @@
         android:icon="@android:drawable/ic_menu_search"
         android:title="Tìm kiếm truyện Trung Quốc"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_api_settings"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="Cài đặt API"
+        app:showAsAction="never" />
 </menu>

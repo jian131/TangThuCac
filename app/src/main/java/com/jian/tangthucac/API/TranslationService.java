@@ -3,6 +3,11 @@ package com.jian.tangthucac.API;
 import android.content.Context;
 import android.util.Log;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.jian.tangthucac.model.SearchKeywordMap;
 import com.jian.tangthucac.model.TranslatedChapter;
 
@@ -11,6 +16,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -22,56 +31,69 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
- * Lớp cung cấp dịch vụ dịch thuật
+ * Dịch vụ kết nối với các API dịch thuật như Claude AI và DeepL
  */
 public class TranslationService {
     private static final String TAG = "TranslationService";
-    private static TranslationService instance;
 
-    // API keys
+    // API endpoints
+    private static final String CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
+    private static final String DEEPL_API_URL = "https://api-free.deepl.com/v2/translate";
+
+    // Tài khoản API (sẽ được cấu hình từ tài khoản người dùng)
     private String claudeApiKey;
     private String deeplApiKey;
 
-    // API endpoints
-    private static final String CLAUDE_API_ENDPOINT = "https://api.anthropic.com/v1/messages";
-    private static final String DEEPL_API_ENDPOINT = "https://api-free.deepl.com/v2/translate";
+    // Các mã ngôn ngữ hỗ trợ
+    public static final String LANGUAGE_ZH = "zh"; // Tiếng Trung
+    public static final String LANGUAGE_VI = "vi"; // Tiếng Việt
+    public static final String LANGUAGE_EN = "en"; // Tiếng Anh
 
-    // OkHttpClient
-    private final OkHttpClient client;
+    // Các công cụ dịch hỗ trợ
+    public static final String ENGINE_CLAUDE = "claude";
+    public static final String ENGINE_DEEPL = "deepl";
+
+    // Singleton instance
+    private static TranslationService instance;
+
+    // RequestQueue cho HTTP requests
+    private RequestQueue requestQueue;
+
+    // Executor cho các tác vụ nền
+    private final Executor executor;
 
     // Media type
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    // Translation engines
-    public static final String ENGINE_CLAUDE = "claude";
-    public static final String ENGINE_DEEPL = "deepl";
-
-    // Languages
-    public static final String LANGUAGE_ZH = "zh"; // Chinese
-    public static final String LANGUAGE_VI = "vi"; // Vietnamese
-    public static final String LANGUAGE_EN = "en"; // English
-
     // Maximum text length for a single translation request
     private static final int MAX_TEXT_LENGTH = 5000;
 
-    // Interface for translation callbacks
+    /**
+     * Callback để nhận kết quả dịch
+     */
     public interface OnTranslationListener {
         void onTranslationCompleted(String translatedText);
         void onError(Exception e);
     }
 
-    // Interface for keyword translation callbacks
+    /**
+     * Callback để nhận kết quả dịch từ khóa
+     */
     public interface OnKeywordTranslationListener {
         void onKeywordTranslated(SearchKeywordMap keywordMap);
         void onError(Exception e);
     }
 
+    /**
+     * Callback để nhận kết quả dịch bài viết
+     */
+    public interface OnContentTranslationListener {
+        void onContentTranslated(TranslatedChapter chapter);
+        void onError(Exception e);
+    }
+
     private TranslationService() {
-        client = new OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build();
+        executor = Executors.newCachedThreadPool();
     }
 
     public static synchronized TranslationService getInstance() {
@@ -87,6 +109,7 @@ public class TranslationService {
     public void initialize(Context context, String claudeApiKey, String deeplApiKey) {
         this.claudeApiKey = claudeApiKey;
         this.deeplApiKey = deeplApiKey;
+        this.requestQueue = Volley.newRequestQueue(context);
     }
 
     /**
@@ -94,67 +117,64 @@ public class TranslationService {
      */
     public void translateWithClaude(String text, String sourceLanguage, String targetLanguage, OnTranslationListener listener) {
         if (claudeApiKey == null || claudeApiKey.isEmpty()) {
-            listener.onError(new Exception("Claude API key not set"));
+            listener.onError(new Exception("Claude API key chưa được cấu hình"));
             return;
         }
 
-        // Xây dựng prompt
-        String prompt = buildClaudePrompt(text, sourceLanguage, targetLanguage);
+        executor.execute(() -> {
+            try {
+                // Tạo prompt cho Claude với ngữ cảnh dịch thuật
+                String prompt = buildClaudeTranslationPrompt(text, sourceLanguage, targetLanguage);
 
-        try {
-            JSONObject requestBody = new JSONObject();
-            requestBody.put("model", "claude-3-opus-20240229");
-            requestBody.put("max_tokens", 4000);
-            requestBody.put("temperature", 0.1);
+                // Tạo JSON request body
+                JSONObject requestBody = new JSONObject();
+                requestBody.put("model", "claude-3-opus-20240229");
+                requestBody.put("max_tokens", 4000);
+                requestBody.put("temperature", 0.3);
 
-            JSONObject message = new JSONObject();
-            message.put("role", "user");
-            message.put("content", prompt);
+                // Thêm thông tin tin nhắn
+                JSONArray messages = new JSONArray();
+                JSONObject message = new JSONObject();
+                message.put("role", "user");
+                message.put("content", prompt);
+                messages.put(message);
 
-            JSONArray messages = new JSONArray();
-            messages.put(message);
+                requestBody.put("messages", messages);
 
-            requestBody.put("messages", messages);
+                // Tạo HTTP request
+                JsonObjectRequest request = new JsonObjectRequest(
+                    CLAUDE_API_URL,
+                    requestBody,
+                    response -> {
+                        try {
+                            // Parse kết quả
+                            JSONArray content = response.getJSONObject("content").getJSONArray("parts");
+                            String translatedText = content.getString(0);
 
-            Request request = new Request.Builder()
-                .url(CLAUDE_API_ENDPOINT)
-                .addHeader("x-api-key", claudeApiKey)
-                .addHeader("anthropic-version", "2023-06-01")
-                .addHeader("content-type", "application/json")
-                .post(RequestBody.create(requestBody.toString(), JSON))
-                .build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    listener.onError(e);
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (!response.isSuccessful()) {
-                        listener.onError(new Exception("API request failed: " + response.code()));
-                        return;
+                            // Xử lý kết quả và gọi callback
+                            listener.onTranslationCompleted(cleanTranslatedText(translatedText));
+                        } catch (JSONException e) {
+                            listener.onError(new Exception("Lỗi khi parse kết quả Claude: " + e.getMessage()));
+                        }
+                    },
+                    error -> listener.onError(new Exception("Lỗi khi gọi Claude API: " + error.getMessage()))
+                ) {
+                    @Override
+                    public Map<String, String> getHeaders() {
+                        Map<String, String> headers = new HashMap<>();
+                        headers.put("Content-Type", "application/json");
+                        headers.put("X-Api-Key", claudeApiKey);
+                        headers.put("anthropic-version", "2023-06-01");
+                        return headers;
                     }
+                };
 
-                    try {
-                        String responseBody = response.body().string();
-                        JSONObject jsonResponse = new JSONObject(responseBody);
-                        JSONObject content = jsonResponse.getJSONArray("content").getJSONObject(0);
-                        String translatedText = content.getString("text");
-
-                        // Process the translated text (remove any additional comments Claude might add)
-                        translatedText = cleanClaudeTranslation(translatedText);
-
-                        listener.onTranslationCompleted(translatedText);
-                    } catch (JSONException e) {
-                        listener.onError(e);
-                    }
-                }
-            });
-        } catch (JSONException e) {
-            listener.onError(e);
-        }
+                // Thêm request vào hàng đợi
+                requestQueue.add(request);
+            } catch (Exception e) {
+                listener.onError(e);
+            }
+        });
     }
 
     /**
@@ -162,56 +182,56 @@ public class TranslationService {
      */
     public void translateWithDeepL(String text, String sourceLanguage, String targetLanguage, OnTranslationListener listener) {
         if (deeplApiKey == null || deeplApiKey.isEmpty()) {
-            listener.onError(new Exception("DeepL API key not set"));
+            listener.onError(new Exception("DeepL API key chưa được cấu hình"));
             return;
         }
 
-        // Map ngôn ngữ sang mã DeepL
-        String deeplSourceLang = mapToDeepLLanguage(sourceLanguage);
-        String deeplTargetLang = mapToDeepLLanguage(targetLanguage);
+        executor.execute(() -> {
+            try {
+                // Map mã ngôn ngữ sang định dạng của DeepL
+                String source = mapLanguageToDeepL(sourceLanguage);
+                String target = mapLanguageToDeepL(targetLanguage);
 
-        try {
-            JSONObject requestBody = new JSONObject();
-            requestBody.put("text", text);
-            requestBody.put("source_lang", deeplSourceLang);
-            requestBody.put("target_lang", deeplTargetLang);
-            requestBody.put("preserve_formatting", 1);
+                // Tạo JSON request body
+                JSONObject requestBody = new JSONObject();
+                requestBody.put("text", text);
+                requestBody.put("source_lang", source);
+                requestBody.put("target_lang", target);
+                requestBody.put("preserve_formatting", true);
 
-            Request request = new Request.Builder()
-                .url(DEEPL_API_ENDPOINT)
-                .addHeader("Authorization", "DeepL-Auth-Key " + deeplApiKey)
-                .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(requestBody.toString(), JSON))
-                .build();
+                // Tạo HTTP request
+                JsonObjectRequest request = new JsonObjectRequest(
+                    DEEPL_API_URL,
+                    requestBody,
+                    response -> {
+                        try {
+                            // Parse kết quả
+                            JSONArray translations = response.getJSONArray("translations");
+                            String translatedText = translations.getJSONObject(0).getString("text");
 
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    listener.onError(e);
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (!response.isSuccessful()) {
-                        listener.onError(new Exception("API request failed: " + response.code()));
-                        return;
+                            // Xử lý kết quả và gọi callback
+                            listener.onTranslationCompleted(cleanTranslatedText(translatedText));
+                        } catch (JSONException e) {
+                            listener.onError(new Exception("Lỗi khi parse kết quả DeepL: " + e.getMessage()));
+                        }
+                    },
+                    error -> listener.onError(new Exception("Lỗi khi gọi DeepL API: " + error.getMessage()))
+                ) {
+                    @Override
+                    public Map<String, String> getHeaders() {
+                        Map<String, String> headers = new HashMap<>();
+                        headers.put("Content-Type", "application/json");
+                        headers.put("Authorization", "DeepL-Auth-Key " + deeplApiKey);
+                        return headers;
                     }
+                };
 
-                    try {
-                        String responseBody = response.body().string();
-                        JSONObject jsonResponse = new JSONObject(responseBody);
-                        JSONArray translations = jsonResponse.getJSONArray("translations");
-                        String translatedText = translations.getJSONObject(0).getString("text");
-
-                        listener.onTranslationCompleted(translatedText);
-                    } catch (JSONException e) {
-                        listener.onError(e);
-                    }
-                }
-            });
-        } catch (JSONException e) {
-            listener.onError(e);
-        }
+                // Thêm request vào hàng đợi
+                requestQueue.add(request);
+            } catch (Exception e) {
+                listener.onError(e);
+            }
+        });
     }
 
     /**
@@ -288,88 +308,79 @@ public class TranslationService {
     /**
      * Dịch nội dung chương truyện
      */
-    public void translateChapter(TranslatedChapter chapter, String sourceLanguage, String targetLanguage, OnTranslationListener listener) {
-        // Sử dụng Claude cho chất lượng cao nhất
-        // Dịch tiêu đề
+    public void translateChapter(TranslatedChapter chapter, String sourceLanguage, String targetLanguage, OnContentTranslationListener listener) {
+        if (chapter == null || chapter.getContent() == null || chapter.getContent().isEmpty()) {
+            listener.onError(new Exception("Nội dung chương trống"));
+            return;
+        }
+
+        // Dịch tiêu đề trước
         translateWithClaude(chapter.getTitle(), sourceLanguage, targetLanguage, new OnTranslationListener() {
             @Override
             public void onTranslationCompleted(String translatedTitle) {
                 // Lưu tiêu đề đã dịch
-                if (targetLanguage.equals(LANGUAGE_VI)) {
-                    chapter.setTitleVi(translatedTitle);
-                }
+                chapter.setTitleVi(translatedTitle);
 
-                // Dịch nội dung - cần chia nhỏ nếu quá dài
-                String content = chapter.getContent();
-                if (content.length() > MAX_TEXT_LENGTH) {
-                    // Chia nội dung thành các phần nhỏ hơn
-                    translateLongContent(content, sourceLanguage, targetLanguage, new OnTranslationListener() {
-                        @Override
-                        public void onTranslationCompleted(String translatedContent) {
-                            if (targetLanguage.equals(LANGUAGE_VI)) {
+                // Tiếp tục dịch nội dung
+                translateWithClaude(chapter.getContent(), sourceLanguage, targetLanguage, new OnTranslationListener() {
+                    @Override
+                    public void onTranslationCompleted(String translatedContent) {
+                        // Lưu nội dung đã dịch
+                        chapter.setContentVi(translatedContent);
+                        chapter.setTranslationEngine(ENGINE_CLAUDE);
+                        chapter.setTranslationQuality(0.9); // Chất lượng cao từ Claude
+                        chapter.setTranslatedTime(System.currentTimeMillis());
+
+                        // Gọi callback
+                        listener.onContentTranslated(chapter);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        // Fallback to DeepL for content
+                        translateWithDeepL(chapter.getContent(), sourceLanguage, targetLanguage, new OnTranslationListener() {
+                            @Override
+                            public void onTranslationCompleted(String translatedContent) {
+                                // Lưu nội dung đã dịch
                                 chapter.setContentVi(translatedContent);
+                                chapter.setTranslationEngine(ENGINE_DEEPL);
+                                chapter.setTranslationQuality(0.7); // Chất lượng từ DeepL
+                                chapter.setTranslatedTime(System.currentTimeMillis());
+
+                                // Gọi callback
+                                listener.onContentTranslated(chapter);
                             }
 
-                            // Cập nhật thông tin dịch
-                            chapter.setTranslationEngine(ENGINE_CLAUDE);
-                            chapter.setTranslatedTime(System.currentTimeMillis());
-
-                            listener.onTranslationCompleted(translatedContent);
-                        }
-
-                        @Override
-                        public void onError(Exception e) {
-                            listener.onError(e);
-                        }
-                    });
-                } else {
-                    // Dịch nội dung nếu không quá dài
-                    translateWithClaude(content, sourceLanguage, targetLanguage, new OnTranslationListener() {
-                        @Override
-                        public void onTranslationCompleted(String translatedContent) {
-                            if (targetLanguage.equals(LANGUAGE_VI)) {
-                                chapter.setContentVi(translatedContent);
+                            @Override
+                            public void onError(Exception e) {
+                                listener.onError(e);
                             }
-
-                            // Cập nhật thông tin dịch
-                            chapter.setTranslationEngine(ENGINE_CLAUDE);
-                            chapter.setTranslatedTime(System.currentTimeMillis());
-
-                            listener.onTranslationCompleted(translatedContent);
-                        }
-
-                        @Override
-                        public void onError(Exception e) {
-                            listener.onError(e);
-                        }
-                    });
-                }
+                        });
+                    }
+                });
             }
 
             @Override
             public void onError(Exception e) {
-                // Fallback to DeepL if Claude fails
+                // Fallback to DeepL for title
                 translateWithDeepL(chapter.getTitle(), sourceLanguage, targetLanguage, new OnTranslationListener() {
                     @Override
                     public void onTranslationCompleted(String translatedTitle) {
-                        // Save translated title
-                        if (targetLanguage.equals(LANGUAGE_VI)) {
-                            chapter.setTitleVi(translatedTitle);
-                        }
+                        // Lưu tiêu đề đã dịch và tiếp tục với nội dung
+                        chapter.setTitleVi(translatedTitle);
 
-                        // Translate content using DeepL
+                        // Tiếp tục dịch nội dung với DeepL
                         translateWithDeepL(chapter.getContent(), sourceLanguage, targetLanguage, new OnTranslationListener() {
                             @Override
                             public void onTranslationCompleted(String translatedContent) {
-                                if (targetLanguage.equals(LANGUAGE_VI)) {
-                                    chapter.setContentVi(translatedContent);
-                                }
-
-                                // Update translation info
+                                // Lưu nội dung đã dịch
+                                chapter.setContentVi(translatedContent);
                                 chapter.setTranslationEngine(ENGINE_DEEPL);
+                                chapter.setTranslationQuality(0.7); // Chất lượng từ DeepL
                                 chapter.setTranslatedTime(System.currentTimeMillis());
 
-                                listener.onTranslationCompleted(translatedContent);
+                                // Gọi callback
+                                listener.onContentTranslated(chapter);
                             }
 
                             @Override
@@ -389,128 +400,106 @@ public class TranslationService {
     }
 
     /**
-     * Xây dựng prompt cho Claude
+     * Phát hiện ngôn ngữ của văn bản dựa trên thuật toán đơn giản
+     * @param text Văn bản cần phát hiện ngôn ngữ
+     * @return Mã ngôn ngữ (ZH, VI, EN)
      */
-    private String buildClaudePrompt(String text, String sourceLanguage, String targetLanguage) {
-        String sourceLangName = getLanguageName(sourceLanguage);
-        String targetLangName = getLanguageName(targetLanguage);
-
-        return "Dịch đoạn văn bản sau từ " + sourceLangName + " sang " + targetLangName +
-               ". Hãy dịch chính xác, tự nhiên và giữ nguyên định dạng. " +
-               "Chỉ trả về bản dịch, không thêm giải thích hay bình luận.\n\n" +
-               "Văn bản gốc:\n" + text;
-    }
-
-    /**
-     * Xử lý bản dịch từ Claude
-     */
-    private String cleanClaudeTranslation(String translation) {
-        // Loại bỏ các dòng dư thừa Claude đôi khi thêm vào
-        if (translation.startsWith("Bản dịch:")) {
-            translation = translation.substring("Bản dịch:".length()).trim();
+    public String detectLanguage(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return LANGUAGE_EN; // Mặc định là tiếng Anh nếu rỗng
         }
-        return translation;
-    }
 
-    /**
-     * Dịch nội dung dài bằng cách chia nhỏ
-     */
-    private void translateLongContent(String content, String sourceLanguage, String targetLanguage, OnTranslationListener listener) {
-        Log.d(TAG, "Translating long content of length: " + content.length());
+        // Đếm các ký tự đặc trưng
+        int chineseChars = 0;
+        int vietnameseChars = 0;
+        int englishChars = 0;
 
-        // Chia nội dung thành các phần nhỏ hơn khoảng 5000 ký tự, cố gắng chia ở ranh giới câu
-        StringBuilder fullTranslation = new StringBuilder();
-        StringBuilder currentChunk = new StringBuilder();
-        String[] paragraphs = content.split("\n");
-
-        int chunkCount = 0;
-        int totalChunks = (int) Math.ceil(content.length() / (double) MAX_TEXT_LENGTH);
-
-        for (String paragraph : paragraphs) {
-            // Nếu thêm đoạn này vào chunk hiện tại sẽ vượt quá kích thước tối đa
-            if (currentChunk.length() + paragraph.length() + 1 > MAX_TEXT_LENGTH) {
-                // Dịch chunk hiện tại
-                String chunkToTranslate = currentChunk.toString();
-                int currentChunkNumber = ++chunkCount;
-
-                translateWithClaude(chunkToTranslate, sourceLanguage, targetLanguage, new OnTranslationListener() {
-                    @Override
-                    public void onTranslationCompleted(String translatedChunk) {
-                        synchronized (fullTranslation) {
-                            fullTranslation.append(translatedChunk).append("\n\n");
-
-                            Log.d(TAG, "Translated chunk " + currentChunkNumber + "/" + totalChunks);
-
-                            // Nếu đây là chunk cuối cùng, gọi listener
-                            if (currentChunkNumber == totalChunks) {
-                                listener.onTranslationCompleted(fullTranslation.toString().trim());
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        listener.onError(e);
-                    }
-                });
-
-                // Bắt đầu chunk mới
-                currentChunk = new StringBuilder(paragraph).append("\n");
-            } else {
-                // Thêm đoạn vào chunk hiện tại
-                currentChunk.append(paragraph).append("\n");
+        for (char c : text.toCharArray()) {
+            // Phạm vi ký tự tiếng Trung
+            if (Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS
+                    || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_COMPATIBILITY
+                    || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A) {
+                chineseChars++;
+            }
+            // Các ký tự tiếng Việt đặc trưng
+            else if (c == 'ă' || c == 'â' || c == 'đ' || c == 'ê' || c == 'ô' || c == 'ơ' || c == 'ư'
+                    || c == 'Ă' || c == 'Â' || c == 'Đ' || c == 'Ê' || c == 'Ô' || c == 'Ơ' || c == 'Ư'
+                    || c == 'á' || c == 'à' || c == 'ả' || c == 'ã' || c == 'ạ'
+                    || c == 'é' || c == 'è' || c == 'ẻ' || c == 'ẽ' || c == 'ẹ'
+                    || c == 'í' || c == 'ì' || c == 'ỉ' || c == 'ĩ' || c == 'ị'
+                    || c == 'ó' || c == 'ò' || c == 'ỏ' || c == 'õ' || c == 'ọ'
+                    || c == 'ú' || c == 'ù' || c == 'ủ' || c == 'ũ' || c == 'ụ'
+                    || c == 'ý' || c == 'ỳ' || c == 'ỷ' || c == 'ỹ' || c == 'ỵ') {
+                vietnameseChars++;
+            }
+            // Các ký tự tiếng Anh
+            else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                englishChars++;
             }
         }
 
-        // Dịch chunk cuối cùng nếu còn
-        if (currentChunk.length() > 0) {
-            String chunkToTranslate = currentChunk.toString();
-            int currentChunkNumber = ++chunkCount;
-
-            translateWithClaude(chunkToTranslate, sourceLanguage, targetLanguage, new OnTranslationListener() {
-                @Override
-                public void onTranslationCompleted(String translatedChunk) {
-                    synchronized (fullTranslation) {
-                        fullTranslation.append(translatedChunk);
-
-                        Log.d(TAG, "Translated chunk " + currentChunkNumber + "/" + totalChunks);
-
-                        // Nếu đây là chunk cuối cùng, gọi listener
-                        if (currentChunkNumber == totalChunks) {
-                            listener.onTranslationCompleted(fullTranslation.toString().trim());
-                        }
-                    }
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    listener.onError(e);
-                }
-            });
+        // Xác định ngôn ngữ dựa trên tỷ lệ ký tự
+        if (chineseChars > vietnameseChars && chineseChars > englishChars) {
+            return LANGUAGE_ZH;
+        } else if (vietnameseChars > englishChars) {
+            return LANGUAGE_VI;
+        } else {
+            return LANGUAGE_EN;
         }
     }
 
     /**
-     * Chuyển đổi mã ngôn ngữ sang tên ngôn ngữ
+     * Đánh giá chất lượng bản dịch
      */
-    private String getLanguageName(String langCode) {
-        switch (langCode) {
-            case LANGUAGE_ZH:
-                return "tiếng Trung";
-            case LANGUAGE_VI:
-                return "tiếng Việt";
-            case LANGUAGE_EN:
-                return "tiếng Anh";
-            default:
-                return langCode;
+    public double evaluateTranslationQuality(String original, String translated, String sourceLanguage, String targetLanguage) {
+        // Các yếu tố đánh giá:
+        // 1. Độ dài tương đối (nếu bản dịch quá ngắn hoặc quá dài có thể không chính xác)
+        // 2. Dấu câu và định dạng
+        // 3. Sự nhất quán của từ khóa
+
+        // Tính toán đơn giản dựa trên độ dài
+        if (original == null || translated == null) {
+            return 0.0;
         }
+
+        double score = 1.0;
+
+        // Kiểm tra độ dài
+        double lengthRatio = (double) translated.length() / original.length();
+        if (lengthRatio < 0.5 || lengthRatio > 2.0) {
+            score -= 0.3; // Độ dài quá khác biệt
+        }
+
+        // Kiểm tra dấu câu cơ bản
+        int originalPunctuationCount = countPunctuation(original);
+        int translatedPunctuationCount = countPunctuation(translated);
+        double punctuationRatio = (double) translatedPunctuationCount / (originalPunctuationCount > 0 ? originalPunctuationCount : 1);
+        if (punctuationRatio < 0.7 || punctuationRatio > 1.5) {
+            score -= 0.2; // Dấu câu khác biệt nhiều
+        }
+
+        // Đảm bảo điểm tối thiểu là 0.0 và tối đa là 1.0
+        return Math.max(0.0, Math.min(1.0, score));
     }
 
     /**
-     * Chuyển đổi mã ngôn ngữ sang mã DeepL
+     * Đếm số lượng dấu câu trong văn bản
      */
-    private String mapToDeepLLanguage(String langCode) {
-        switch (langCode) {
+    private int countPunctuation(String text) {
+        int count = 0;
+        for (char c : text.toCharArray()) {
+            if (c == '.' || c == ',' || c == '!' || c == '?' || c == ';' || c == ':' || c == '"' || c == '\'') {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Map mã ngôn ngữ sang định dạng của DeepL
+     */
+    private String mapLanguageToDeepL(String language) {
+        switch (language) {
             case LANGUAGE_ZH:
                 return "ZH";
             case LANGUAGE_VI:
@@ -518,47 +507,58 @@ public class TranslationService {
             case LANGUAGE_EN:
                 return "EN";
             default:
-                return langCode.toUpperCase();
+                return language.toUpperCase();
         }
     }
 
     /**
-     * Nhận diện ngôn ngữ từ văn bản
-     * Sử dụng một thuật toán đơn giản dựa trên bảng mã để phân biệt tiếng Trung và tiếng Việt
+     * Tạo prompt cho Claude dịch thuật
      */
-    public String detectLanguage(String text) {
-        if (text == null || text.isEmpty()) {
-            return LANGUAGE_EN; // Mặc định là tiếng Anh
+    private String buildClaudeTranslationPrompt(String text, String sourceLanguage, String targetLanguage) {
+        String sourceName = getLanguageName(sourceLanguage);
+        String targetName = getLanguageName(targetLanguage);
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Dịch văn bản sau đây từ ").append(sourceName).append(" sang ").append(targetName).append(":\n\n");
+        prompt.append("```\n").append(text).append("\n```\n\n");
+        prompt.append("Chỉ trả về bản dịch, không thêm giải thích hay bình luận. ");
+        prompt.append("Giữ nguyên định dạng, dấu câu và các ký tự đặc biệt. ");
+
+        if (targetLanguage.equals(LANGUAGE_VI)) {
+            prompt.append("Đây là bản dịch sang tiếng Việt, hãy đảm bảo sử dụng từ ngữ tự nhiên, đúng ngữ pháp và có tính văn học cao.");
         }
 
-        text = text.trim();
+        return prompt.toString();
+    }
 
-        // Đếm số ký tự Trung Quốc
-        int chineseCharCount = 0;
-        // Đếm số ký tự Latin + dấu tiếng Việt
-        int vietnameseCharCount = 0;
-
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-
-            // Phạm vi ký tự Hán
-            if (c >= 0x4E00 && c <= 0x9FFF) {
-                chineseCharCount++;
-            }
-            // Ký tự Latin cơ bản và dấu tiếng Việt
-            else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                     "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴĐ".indexOf(c) >= 0) {
-                vietnameseCharCount++;
-            }
+    /**
+     * Lấy tên đầy đủ của ngôn ngữ
+     */
+    private String getLanguageName(String languageCode) {
+        switch (languageCode) {
+            case LANGUAGE_ZH:
+                return "tiếng Trung";
+            case LANGUAGE_VI:
+                return "tiếng Việt";
+            case LANGUAGE_EN:
+                return "tiếng Anh";
+            default:
+                return languageCode;
         }
+    }
 
-        // Quyết định ngôn ngữ dựa trên tỷ lệ
-        if (chineseCharCount > vietnameseCharCount * 0.3) {
-            return LANGUAGE_ZH;
-        } else if (vietnameseCharCount > text.length() * 0.3) {
-            return LANGUAGE_VI;
-        } else {
-            return LANGUAGE_EN;
-        }
+    /**
+     * Làm sạch văn bản đã dịch, loại bỏ các thông tin không cần thiết
+     */
+    private String cleanTranslatedText(String text) {
+        // Loại bỏ các dấu backtick và thông tin dư thừa có thể xuất hiện trong kết quả
+        text = text.replaceAll("```.*?```", "").trim();
+        text = text.replaceAll("^```", "").replaceAll("```$", "").trim();
+
+        // Loại bỏ các chú thích không cần thiết
+        text = text.replaceAll("\\[Bản dịch\\]:", "").trim();
+        text = text.replaceAll("Bản dịch:", "").trim();
+
+        return text;
     }
 }

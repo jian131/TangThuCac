@@ -22,6 +22,8 @@ import com.jian.tangthucac.adapter.SearchResultAdapter;
 import com.jian.tangthucac.databinding.ActivityChineseNovelSearchBinding;
 import com.jian.tangthucac.model.OriginalStory;
 import com.jian.tangthucac.model.SearchKeywordMap;
+import com.jian.tangthucac.crawler.CrawlerFactory;
+import com.jian.tangthucac.crawler.NovelCrawler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -268,9 +270,45 @@ public class ChineseNovelSearchActivity extends AppCompatActivity {
         // Xác định nguồn tìm kiếm
         String source = getSelectedSource();
 
-        // TODO: Thay thế bằng API thực tế tìm kiếm từ nguồn Trung Quốc
-        // Tạm thời dùng demo data để kiểm thử
-        generateDemoResults(keyword, source);
+        // Lấy crawler tương ứng với nguồn đã chọn
+        CrawlerFactory crawlerFactory = CrawlerFactory.getInstance(this);
+
+        if (crawlerFactory.isSourceSupported(source)) {
+            NovelCrawler crawler = crawlerFactory.getCrawler(source);
+
+            // Gửi yêu cầu tìm kiếm đến crawler
+            crawler.searchNovel(keyword, new NovelCrawler.OnSearchResultListener() {
+                @Override
+                public void onSearchCompleted(List<OriginalStory> results) {
+                    runOnUiThread(() -> {
+                        binding.progressBar.setVisibility(View.GONE);
+
+                        if (results.isEmpty()) {
+                            binding.searchStatusText.setText("Không tìm thấy kết quả nào cho \"" + keyword + "\"");
+                        } else {
+                            binding.searchStatusText.setText("Tìm thấy " + results.size() + " kết quả cho \"" + keyword + "\"");
+                            searchResults.clear();
+                            searchResults.addAll(results);
+                            adapter.notifyDataSetChanged();
+                        }
+
+                        isSearching = false;
+                    });
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    runOnUiThread(() -> {
+                        binding.progressBar.setVisibility(View.GONE);
+                        binding.searchStatusText.setText("Lỗi tìm kiếm: " + e.getMessage());
+                        isSearching = false;
+                    });
+                }
+            });
+        } else {
+            // Nếu nguồn chưa được hỗ trợ, sử dụng dữ liệu mẫu
+            generateDemoResults(keyword, source);
+        }
     }
 
     // Demo function, thay thế bằng API thực tế
