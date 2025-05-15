@@ -1,6 +1,7 @@
 package com.jian.tangthucac.API;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.android.volley.RequestQueue;
@@ -8,6 +9,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.jian.tangthucac.model.SearchKeywordMap;
 import com.jian.tangthucac.model.TranslatedChapter;
 
@@ -16,11 +19,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -68,6 +77,18 @@ public class TranslationService {
     // Maximum text length for a single translation request
     private static final int MAX_TEXT_LENGTH = 5000;
 
+    // Bộ đệm dịch thuật: lưu trữ văn bản đã dịch để tránh dịch lại
+    private final Map<String, String> translationCache;
+    private static final int MAX_CACHE_SIZE = 1000;
+
+    // Cache constants
+    private static final String PREF_NAME = "translation_cache";
+    private static final String TRANSLATION_CACHE_KEY = "translation_cache_data";
+
+    // SharedPreferences cho bộ đệm dịch thuật
+    private SharedPreferences translationPreferences;
+    private final Gson gson;
+
     /**
      * Callback để nhận kết quả dịch
      */
@@ -94,6 +115,8 @@ public class TranslationService {
 
     private TranslationService() {
         executor = Executors.newCachedThreadPool();
+        translationCache = new ConcurrentHashMap<>();
+        gson = new Gson();
     }
 
     public static synchronized TranslationService getInstance() {
@@ -110,6 +133,65 @@ public class TranslationService {
         this.claudeApiKey = claudeApiKey;
         this.deeplApiKey = deeplApiKey;
         this.requestQueue = Volley.newRequestQueue(context);
+        this.translationPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        loadTranslationCache();
+    }
+
+    /**
+     * Tải cache dịch thuật từ SharedPreferences
+     */
+    private void loadTranslationCache() {
+        executor.execute(() -> {
+            try {
+                String cacheJson = translationPreferences.getString(TRANSLATION_CACHE_KEY, null);
+                if (cacheJson != null) {
+                    Type cacheType = new TypeToken<Map<String, String>>(){}.getType();
+                    Map<String, String> loadedCache = gson.fromJson(cacheJson, cacheType);
+                    if (loadedCache != null) {
+                        translationCache.putAll(loadedCache);
+                        Log.d(TAG, "Đã tải " + translationCache.size() + " mục dịch từ cache");
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Lỗi khi tải cache dịch thuật: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Lưu cache dịch thuật vào SharedPreferences
+     */
+    private void saveTranslationCache() {
+        if (translationPreferences == null) return;
+
+        executor.execute(() -> {
+            try {
+                // Giới hạn kích thước cache để tránh quá lớn
+                Map<String, String> cacheToSave = new HashMap<>();
+                int count = 0;
+                for (Map.Entry<String, String> entry : translationCache.entrySet()) {
+                    if (count++ >= MAX_CACHE_SIZE) break;
+                    cacheToSave.put(entry.getKey(), entry.getValue());
+                }
+
+                String cacheJson = gson.toJson(cacheToSave);
+                translationPreferences.edit()
+                    .putString(TRANSLATION_CACHE_KEY, cacheJson)
+                    .apply();
+
+                Log.d(TAG, "Đã lưu " + cacheToSave.size() + " mục dịch vào cache");
+            } catch (Exception e) {
+                Log.e(TAG, "Lỗi khi lưu cache dịch thuật: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Tạo khóa cache từ văn bản nguồn, ngôn ngữ nguồn và đích
+     */
+    private String generateCacheKey(String text, String sourceLanguage, String targetLanguage) {
+        // Sử dụng hash của văn bản kết hợp với ngôn ngữ để tạo khóa ngắn hơn
+        return sourceLanguage + "_" + targetLanguage + "_" + Math.abs(text.hashCode());
     }
 
     /**
@@ -118,6 +200,15 @@ public class TranslationService {
     public void translateWithClaude(String text, String sourceLanguage, String targetLanguage, OnTranslationListener listener) {
         if (claudeApiKey == null || claudeApiKey.isEmpty()) {
             listener.onError(new Exception("Claude API key chưa được cấu hình"));
+            return;
+        }
+
+        // Kiểm tra cache trước
+        String cacheKey = generateCacheKey(text, sourceLanguage, targetLanguage);
+        if (translationCache.containsKey(cacheKey)) {
+            String cachedTranslation = translationCache.get(cacheKey);
+            Log.d(TAG, "Sử dụng bản dịch từ cache");
+            listener.onTranslationCompleted(cachedTranslation);
             return;
         }
 
@@ -150,9 +241,14 @@ public class TranslationService {
                             // Parse kết quả
                             JSONArray content = response.getJSONObject("content").getJSONArray("parts");
                             String translatedText = content.getString(0);
+                            translatedText = cleanTranslatedText(translatedText);
+
+                            // Lưu vào cache
+                            translationCache.put(cacheKey, translatedText);
+                            saveTranslationCache();
 
                             // Xử lý kết quả và gọi callback
-                            listener.onTranslationCompleted(cleanTranslatedText(translatedText));
+                            listener.onTranslationCompleted(translatedText);
                         } catch (JSONException e) {
                             listener.onError(new Exception("Lỗi khi parse kết quả Claude: " + e.getMessage()));
                         }
@@ -186,6 +282,15 @@ public class TranslationService {
             return;
         }
 
+        // Kiểm tra cache trước
+        String cacheKey = generateCacheKey(text, sourceLanguage, targetLanguage);
+        if (translationCache.containsKey(cacheKey)) {
+            String cachedTranslation = translationCache.get(cacheKey);
+            Log.d(TAG, "Sử dụng bản dịch DeepL từ cache");
+            listener.onTranslationCompleted(cachedTranslation);
+            return;
+        }
+
         executor.execute(() -> {
             try {
                 // Map mã ngôn ngữ sang định dạng của DeepL
@@ -208,9 +313,14 @@ public class TranslationService {
                             // Parse kết quả
                             JSONArray translations = response.getJSONArray("translations");
                             String translatedText = translations.getJSONObject(0).getString("text");
+                            translatedText = cleanTranslatedText(translatedText);
+
+                            // Lưu vào cache
+                            translationCache.put(cacheKey, translatedText);
+                            saveTranslationCache();
 
                             // Xử lý kết quả và gọi callback
-                            listener.onTranslationCompleted(cleanTranslatedText(translatedText));
+                            listener.onTranslationCompleted(translatedText);
                         } catch (JSONException e) {
                             listener.onError(new Exception("Lỗi khi parse kết quả DeepL: " + e.getMessage()));
                         }
@@ -400,6 +510,122 @@ public class TranslationService {
     }
 
     /**
+     * Dịch một danh sách các chương với chiến lược tiết kiệm băng thông
+     * Sử dụng kết hợp cache + batch translation khi có thể
+     * @param chapters Danh sách các chương cần dịch
+     * @param sourceLanguage Ngôn ngữ nguồn
+     * @param targetLanguage Ngôn ngữ đích
+     * @param listener Callback khi hoàn thành dịch từng chương
+     */
+    public void batchTranslateChapters(List<TranslatedChapter> chapters, String sourceLanguage,
+                                      String targetLanguage, OnContentTranslationListener listener) {
+        if (chapters == null || chapters.isEmpty()) {
+            return;
+        }
+
+        // Thực hiện dịch lần lượt từng chương, sử dụng executor để tránh nghẽn
+        final int[] processed = {0};
+        final int total = chapters.size();
+
+        for (TranslatedChapter chapter : chapters) {
+            // Kiểm tra cache trước
+            String titleCacheKey = generateCacheKey(chapter.getTitle(), sourceLanguage, targetLanguage);
+            String contentCacheKey = generateCacheKey(chapter.getContent(), sourceLanguage, targetLanguage);
+
+            boolean needsTranslation = !translationCache.containsKey(titleCacheKey) ||
+                                      !translationCache.containsKey(contentCacheKey);
+
+            if (needsTranslation) {
+                // Phân bổ thời gian giữa các request để tránh quá tải API
+                long delay = processed[0] * 500; // 500ms giữa các yêu cầu
+
+                executor.execute(() -> {
+                    try {
+                        Thread.sleep(delay);
+                        translateChapter(chapter, sourceLanguage, targetLanguage, new OnContentTranslationListener() {
+                            @Override
+                            public void onContentTranslated(TranslatedChapter translatedChapter) {
+                                processed[0]++;
+                                listener.onContentTranslated(translatedChapter);
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                processed[0]++;
+                                listener.onError(e);
+                            }
+                        });
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Batch translation interrupted", e);
+                    }
+                });
+            } else {
+                // Trích xuất từ cache
+                executor.execute(() -> {
+                    try {
+                        String cachedTitle = translationCache.get(titleCacheKey);
+                        String cachedContent = translationCache.get(contentCacheKey);
+
+                        chapter.setTitleVi(cachedTitle);
+                        chapter.setContentVi(cachedContent);
+                        chapter.setTranslationEngine(ENGINE_CLAUDE); // Giả định engine cache
+                        chapter.setTranslationQuality(0.9); // Giả định chất lượng cao từ cache
+                        chapter.setTranslatedTime(System.currentTimeMillis());
+
+                        processed[0]++;
+                        listener.onContentTranslated(chapter);
+                    } catch (Exception e) {
+                        processed[0]++;
+                        listener.onError(e);
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Khả năng kiểm soát băng thông - giới hạn số lượng requests/phút
+     */
+    private final int MAX_REQUESTS_PER_MINUTE = 30;
+    private final Queue<Long> requestTimestamps = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Kiểm tra và giới hạn tốc độ request
+     * @return true nếu có thể gửi request ngay, false nếu cần đợi
+     */
+    private boolean canSendRequest() {
+        long currentTime = System.currentTimeMillis();
+        long oneMinuteAgo = currentTime - 60 * 1000;
+
+        // Xóa các timestamps cũ hơn 1 phút
+        while (!requestTimestamps.isEmpty() && requestTimestamps.peek() < oneMinuteAgo) {
+            requestTimestamps.poll();
+        }
+
+        // Kiểm tra nếu đã đạt giới hạn
+        if (requestTimestamps.size() < MAX_REQUESTS_PER_MINUTE) {
+            requestTimestamps.add(currentTime);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Đợi cho đến khi có thể gửi request
+     */
+    private void waitForRequestSlot() {
+        while (!canSendRequest()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    /**
      * Phát hiện ngôn ngữ của văn bản dựa trên thuật toán đơn giản
      * @param text Văn bản cần phát hiện ngôn ngữ
      * @return Mã ngôn ngữ (ZH, VI, EN)
@@ -560,5 +786,16 @@ public class TranslationService {
         text = text.replaceAll("Bản dịch:", "").trim();
 
         return text;
+    }
+
+    /**
+     * Xóa bộ nhớ đệm dịch thuật
+     */
+    public void clearTranslationCache() {
+        translationCache.clear();
+        if (translationPreferences != null) {
+            translationPreferences.edit().remove(TRANSLATION_CACHE_KEY).apply();
+        }
+        Log.d(TAG, "Đã xóa cache dịch thuật");
     }
 }

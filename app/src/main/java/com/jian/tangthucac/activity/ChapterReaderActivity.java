@@ -2,6 +2,7 @@ package com.jian.tangthucac.activity;
 
 import android.app.Dialog;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
@@ -19,11 +20,18 @@ import android.widget.ToggleButton;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.jian.tangthucac.API.ChineseNovelManager;
 import com.jian.tangthucac.API.TranslationService;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.model.TranslatedChapter;
+import com.jian.tangthucac.util.ContentNormalizer;
+import com.jian.tangthucac.worker.ChapterPreloadWorker;
 
 import java.util.Locale;
 
@@ -189,6 +197,9 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
         // Áp dụng cài đặt hiển thị
         chapterContent.setTextSize(currentFontSize);
         chapterContent.setTypeface(currentTypeface);
+
+        // Lên lịch tải trước các chương tiếp theo
+        scheduleChapterPreloading();
     }
 
     private void loadPreviousChapter() {
@@ -400,5 +411,220 @@ public class ChapterReaderActivity extends AppCompatActivity implements TextToSp
             textToSpeech.shutdown();
         }
         super.onDestroy();
+    }
+
+    /**
+     * Cải thiện hiệu suất hiển thị nội dung chương song ngữ
+     */
+    private void setupBilingualContent(TranslatedChapter chapter) {
+        if (chapter == null) {
+            showToast("Lỗi: không thể hiển thị chương");
+            return;
+        }
+
+        // Tối ưu hiệu suất hiển thị nội dung song ngữ
+        if (contentWebView != null) {
+            // Sử dụng AsyncTask để tải và xử lý nội dung ở background
+            new AsyncTask<Void, Void, String>() {
+                @Override
+                protected String doInBackground(Void... voids) {
+                    // Chuẩn hóa nội dung chương
+                    String chineseContent = chapter.getContent();
+                    String vietnameseContent = chapter.getContentVi();
+
+                    // Kiểm tra và chuẩn hóa nội dung nếu cần
+                    if (chineseContent != null && !chineseContent.isEmpty()) {
+                        chineseContent = ContentNormalizer.normalizeChapterContent(chineseContent);
+                    }
+
+                    if (vietnameseContent != null && !vietnameseContent.isEmpty()) {
+                        vietnameseContent = ContentNormalizer.normalizeChapterContent(vietnameseContent);
+                    }
+
+                    // Tạo HTML song ngữ
+                    return formatBilingualContent(chineseContent, vietnameseContent);
+                }
+
+                @Override
+                protected void onPostExecute(String htmlContent) {
+                    // Tải HTML vào WebView
+                    contentWebView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+
+                    // Cập nhật số lượt xem
+                    updateViewCount(chapter);
+                }
+            }.execute();
+        }
+    }
+
+    /**
+     * Tạo HTML định dạng cho nội dung song ngữ với hiệu suất cao
+     */
+    private String formatBilingualContent(String chineseContent, String vietnameseContent) {
+        StringBuilder htmlBuilder = new StringBuilder();
+
+        // Sử dụng StringBuilder thay vì ghép chuỗi để tối ưu hiệu suất
+        htmlBuilder.append("<!DOCTYPE html><html><head>")
+                   .append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+                   .append("<style>")
+                   .append("body { font-family: 'Noto Sans', 'Roboto', sans-serif; font-size: 18px; line-height: 1.8; padding: 16px; background-color: ")
+                   .append(isDarkMode ? "#1a1a1a" : "#f8f8f8")
+                   .append("; color: ")
+                   .append(isDarkMode ? "#f0f0f0" : "#333333")
+                   .append("; }")
+                   .append(".bilingual-pair { margin-bottom: 20px; border-bottom: 1px solid ")
+                   .append(isDarkMode ? "#444" : "#ddd")
+                   .append("; padding-bottom: 10px; }")
+                   .append(".chinese { font-size: ")
+                   .append(chineseFontSize)
+                   .append("px; ")
+                   .append(showChinese ? "display: block;" : "display: none;")
+                   .append(" margin-bottom: 8px; color: ")
+                   .append(isDarkMode ? "#ffcc80" : "#d66000")
+                   .append("; }")
+                   .append(".vietnamese { font-size: ")
+                   .append(vietFontSize)
+                   .append("px; ")
+                   .append(showVietnamese ? "display: block;" : "display: none;")
+                   .append(" margin-bottom: 8px; color: ")
+                   .append(isDarkMode ? "#a5d6a7" : "#2e7d32")
+                   .append("; }")
+                   .append("</style></head><body>");
+
+        // Chia từng đoạn văn và hiển thị song song
+        if (chineseContent != null && !chineseContent.isEmpty() &&
+            vietnameseContent != null && !vietnameseContent.isEmpty()) {
+
+            // Tách nội dung thành các đoạn
+            String[] chineseParagraphs = chineseContent.split("(?<=<br/>)|(?<=</p>)");
+            String[] vietnameseParagraphs = vietnameseContent.split("(?<=<br/>)|(?<=</p>)");
+
+            // Xác định số đoạn cần hiển thị
+            int paragraphCount = Math.min(chineseParagraphs.length, vietnameseParagraphs.length);
+
+            // Hiển thị từng cặp đoạn song ngữ
+            for (int i = 0; i < paragraphCount; i++) {
+                String chinesePara = chineseParagraphs[i].trim();
+                String vietnamesePara = vietnameseParagraphs[i].trim();
+
+                if (!chinesePara.isEmpty() || !vietnamesePara.isEmpty()) {
+                    htmlBuilder.append("<div class='bilingual-pair'>")
+                               .append("<div class='chinese'>").append(chinesePara).append("</div>")
+                               .append("<div class='vietnamese'>").append(vietnamesePara).append("</div>")
+                               .append("</div>");
+                }
+            }
+
+            // Nếu một ngôn ngữ có nhiều đoạn hơn, hiển thị phần còn lại
+            if (chineseParagraphs.length > vietnameseParagraphs.length) {
+                for (int i = paragraphCount; i < chineseParagraphs.length; i++) {
+                    String para = chineseParagraphs[i].trim();
+                    if (!para.isEmpty()) {
+                        htmlBuilder.append("<div class='bilingual-pair'>")
+                                   .append("<div class='chinese'>").append(para).append("</div>")
+                                   .append("<div class='vietnamese'><i>Chưa có bản dịch</i></div>")
+                                   .append("</div>");
+                    }
+                }
+            } else if (vietnameseParagraphs.length > chineseParagraphs.length) {
+                for (int i = paragraphCount; i < vietnameseParagraphs.length; i++) {
+                    String para = vietnameseParagraphs[i].trim();
+                    if (!para.isEmpty()) {
+                        htmlBuilder.append("<div class='bilingual-pair'>")
+                                   .append("<div class='chinese'><i>Không có nội dung gốc</i></div>")
+                                   .append("<div class='vietnamese'>").append(para).append("</div>")
+                                   .append("</div>");
+                    }
+                }
+            }
+        } else if (chineseContent != null && !chineseContent.isEmpty()) {
+            // Chỉ có nội dung tiếng Trung
+            htmlBuilder.append("<div class='chinese'>").append(chineseContent).append("</div>");
+        } else if (vietnameseContent != null && !vietnameseContent.isEmpty()) {
+            // Chỉ có nội dung tiếng Việt
+            htmlBuilder.append("<div class='vietnamese'>").append(vietnameseContent).append("</div>");
+        } else {
+            // Không có nội dung
+            htmlBuilder.append("<p>Không có nội dung khả dụng.</p>");
+        }
+
+        // Thêm JavaScript để cải thiện tương tác
+        htmlBuilder.append("<script>")
+                   .append("function toggleChinese() { ")
+                   .append("  var elements = document.getElementsByClassName('chinese'); ")
+                   .append("  for (var i = 0; i < elements.length; i++) { ")
+                   .append("    elements[i].style.display = elements[i].style.display === 'none' ? 'block' : 'none'; ")
+                   .append("  } ")
+                   .append("} ")
+                   .append("function toggleVietnamese() { ")
+                   .append("  var elements = document.getElementsByClassName('vietnamese'); ")
+                   .append("  for (var i = 0; i < elements.length; i++) { ")
+                   .append("    elements[i].style.display = elements[i].style.display === 'none' ? 'block' : 'none'; ")
+                   .append("  } ")
+                   .append("} ")
+                   .append("</script>")
+                   .append("</body></html>");
+
+        return htmlBuilder.toString();
+    }
+
+    /**
+     * Cập nhật trạng thái chế độ đọc, lưu vào SharedPreferences
+     */
+    private void updateReadingPreferences() {
+        SharedPreferences prefs = getSharedPreferences("reading_preferences", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putBoolean("show_chinese", showChinese);
+        editor.putBoolean("show_vietnamese", showVietnamese);
+        editor.putInt("chinese_font_size", chineseFontSize);
+        editor.putInt("viet_font_size", vietFontSize);
+        editor.putBoolean("dark_mode", isDarkMode);
+
+        editor.apply();
+    }
+
+    /**
+     * Tải trạng thái chế độ đọc từ SharedPreferences
+     */
+    private void loadReadingPreferences() {
+        SharedPreferences prefs = getSharedPreferences("reading_preferences", MODE_PRIVATE);
+
+        showChinese = prefs.getBoolean("show_chinese", true);
+        showVietnamese = prefs.getBoolean("show_vietnamese", true);
+        chineseFontSize = prefs.getInt("chinese_font_size", 18);
+        vietFontSize = prefs.getInt("viet_font_size", 18);
+        isDarkMode = prefs.getBoolean("dark_mode", false);
+    }
+
+    /**
+     * Lên lịch tải trước các chương tiếp theo
+     */
+    private void scheduleChapterPreloading() {
+        if (storyId == null || chapterId == null) return;
+
+        // Tạo ràng buộc - chỉ tải khi có kết nối mạng
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        // Tạo dữ liệu đầu vào cho worker
+        Data inputData = new Data.Builder()
+                .putString(ChapterPreloadWorker.KEY_STORY_ID, storyId)
+                .putString(ChapterPreloadWorker.KEY_CURRENT_CHAPTER_ID, chapterId)
+                .putInt(ChapterPreloadWorker.KEY_NUMBER_OF_CHAPTERS, 3) // Tải trước 3 chương
+                .putBoolean(ChapterPreloadWorker.KEY_AUTO_TRANSLATE, true)
+                .build();
+
+        // Tạo request
+        OneTimeWorkRequest preloadRequest = new OneTimeWorkRequest.Builder(ChapterPreloadWorker.class)
+                .setConstraints(constraints)
+                .setInputData(inputData)
+                .build();
+
+        // Đặt lịch thực hiện
+        WorkManager.getInstance(getApplicationContext()).enqueue(preloadRequest);
+
+        Log.d(TAG, "Đã lên lịch tải trước các chương tiếp theo");
     }
 }
