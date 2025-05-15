@@ -92,12 +92,7 @@ public class StoryDetailActivity extends AppCompatActivity {
         binding.chaptersRecyclerView.setAdapter(chapterAdapter);
 
         // Thiết lập click listener
-        chapterAdapter.setOnItemClickListener(new ChapterAdapter.OnItemClickListener() {
-            @Override
-            public void onChapterClick(TranslatedChapter chapter) {
-                openChapter(chapter);
-            }
-        });
+        chapterAdapter.setOnItemClickListener(chapter -> openChapter(chapter));
     }
 
     private void setupListeners() {

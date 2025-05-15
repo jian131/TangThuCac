@@ -15,6 +15,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.button.MaterialButton;
 import com.jian.tangthucac.R;
 import com.jian.tangthucac.model.OriginalStory;
+import com.jian.tangthucac.model.Story;
 
 import java.util.List;
 
@@ -24,7 +25,7 @@ import java.util.List;
 public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.ViewHolder> {
 
     private final Context context;
-    private final List<OriginalStory> stories;
+    private List<OriginalStory> stories;
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -39,6 +40,22 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
+    }
+
+    // Thêm phương thức để cập nhật dữ liệu mới
+    public void updateData(List<Story> newStories) {
+        // Chuyển đổi từ Story sang OriginalStory nếu cần
+        this.stories.clear();
+        for (Story story : newStories) {
+            OriginalStory originalStory = new OriginalStory();
+            originalStory.setId(story.getId());
+            originalStory.setTitle(story.getTitle());
+            originalStory.setAuthor(story.getAuthor());
+            originalStory.setDescription(story.getDescription());
+            originalStory.setImageUrl(story.getImageUrl());
+            this.stories.add(originalStory);
+        }
+        notifyDataSetChanged();
     }
 
     @NonNull
