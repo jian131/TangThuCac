@@ -1,12 +1,41 @@
-
 package com.jian.tangthucac.model;
 
-public class Message {
-    private String content;
-    private String sender; // "user" hoặc "bot"
+import java.io.Serializable;
 
-    public Message(String content, String sender) {
+/**
+ * Mô hình tin nhắn cho AI chat
+ */
+public class Message implements Serializable {
+    private String id;
+    private String sender;  // "user" hoặc "ai"
+    private String content;
+    private long timestamp;
+
+    public Message() {
+        // Constructor rỗng cho Firebase
+        this.timestamp = System.currentTimeMillis();
+    }
+
+    public Message(String id, String sender, String content) {
+        this.id = id;
+        this.sender = sender;
         this.content = content;
+        this.timestamp = System.currentTimeMillis();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public void setSender(String sender) {
         this.sender = sender;
     }
 
@@ -14,11 +43,25 @@ public class Message {
         return content;
     }
 
-    public String getSender() {
-        return sender;
+    public void setContent(String content) {
+        this.content = content;
     }
 
-    public boolean isUser() {
-        return "user".equals(sender);
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "id='" + id + '\'' +
+                ", sender='" + sender + '\'' +
+                ", content='" + content + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
     }
 }
