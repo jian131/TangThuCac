@@ -1,52 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.TangThuCac" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.AppTruyenChu" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/accent</item>
-        <item name="colorSecondaryVariant">@color/accent_dark</item>
+        <item name="colorSecondaryVariant">@color/accent</item>
         <item name="colorOnSecondary">@color/white</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Background colors -->
-        <item name="android:colorBackground">@color/background_light</item>
-        <item name="colorSurface">@color/surface_light</item>
-        <!-- Text colors -->
-        <item name="android:textColorPrimary">@color/text_primary_light</item>
-        <item name="android:textColorSecondary">@color/text_secondary_light</item>
-        <!-- Card styles -->
-        <item name="cardBackgroundColor">@color/card_background_light</item>
-        <item name="cardElevation">2dp</item>
-        <item name="cardCornerRadius">8dp</item>
+        <!-- Customize your theme here. -->
+        <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:textColorPrimary">@color/primary_text</item>
+        <item name="android:textColorSecondary">@color/secondary_text</item>
     </style>
 
-    <style name="Theme.TangThuCac" parent="Base.Theme.TangThuCac" />
-
-    <!-- Style cho ActionBar -->
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar" />
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
-
-    <!-- Styles cho components -->
-    <style name="Widget.TangThuCac.Button" parent="Widget.MaterialComponents.Button">
-        <item name="android:padding">12dp</item>
-        <item name="cornerRadius">8dp</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:letterSpacing">0.01</item>
+    <style name="Theme.AppTruyenChu.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Widget.TangThuCac.Button.TextButton" parent="Widget.MaterialComponents.Button.TextButton">
-        <item name="android:textColor">@color/primary</item>
-        <item name="rippleColor">@color/ripple_light</item>
+    <style name="Theme.AppTruyenChu.Reading">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/reading_background_light</item>
+        <item name="android:textColorPrimary">@color/reading_text_light</item>
     </style>
 
-    <style name="Widget.TangThuCac.Card" parent="Widget.MaterialComponents.CardView">
-        <item name="cardElevation">4dp</item>
-        <item name="cardCornerRadius">12dp</item>
-        <item name="contentPadding">12dp</item>
-        <item name="cardBackgroundColor">@color/card_background_light</item>
-    </style>
+    <style name="Theme.AppTruyenChu.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.AppTruyenChu.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

@@ -1,57 +1,67 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tầng Thư Các</string>
-    <string name="app_description">Thế giới truyện Trung Quốc</string>
-    <string name="home">Trang chủ</string>
-    <string name="library">Thư viện</string>
-    <string name="discover">Khám phá</string>
-    <string name="profile">Hồ sơ</string>
-    <string name="ai_chat">AI trợ giúp</string>
+    <string name="app_name">Đọc Truyện Chữ</string>
+
+    <!-- Login/Register -->
     <string name="login">Đăng nhập</string>
     <string name="register">Đăng ký</string>
     <string name="email">Email</string>
     <string name="password">Mật khẩu</string>
-    <string name="search_hint">Tìm kiếm truyện Trung Quốc...</string>
-    <string name="favorite">Yêu thích</string>
-    <string name="read">Đọc truyện</string>
-    <string name="listen">Nghe đọc</string>
+    <string name="confirm_password">Xác nhận mật khẩu</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="login_with_google">Đăng nhập với Google</string>
+    <string name="or">Hoặc</string>
+    <string name="dont_have_account">Chưa có tài khoản?</string>
+    <string name="already_have_account">Đã có tài khoản?</string>
 
-    <!-- Navigation strings -->
-    <string name="navigation_home">Trang chủ</string>
-    <string name="navigation_library">Thư viện</string>
-    <string name="navigation_genres">Thể loại</string>
-    <string name="navigation_user">Cá nhân</string>
-    <string name="navigation_chat">AI Chat</string>
+    <!-- Main -->
+    <string name="home">Trang chủ</string>
+    <string name="search">Tìm kiếm</string>
+    <string name="bookshelf">Tủ truyện</string>
+    <string name="profile">Cá nhân</string>
+    <string name="settings">Cài đặt</string>
 
-    <!-- Chinese Novel specific -->
-    <string name="chinese_novels">Truyện Trung Quốc</string>
-    <string name="popular_chinese_novels">Truyện Trung nổi bật</string>
-    <string name="latest_chinese_novels">Truyện Trung mới nhất</string>
-    <string name="completed_chinese_novels">Truyện Trung đã hoàn thành</string>
-    <string name="recommended_chinese_novels">Đề xuất cho bạn</string>
+    <!-- Novel Details -->
+    <string name="author">Tác giả</string>
+    <string name="status">Trạng thái</string>
+    <string name="category">Thể loại</string>
+    <string name="chapters">Số chương</string>
+    <string name="description">Giới thiệu</string>
+    <string name="add_to_favorites">Thêm vào yêu thích</string>
+    <string name="remove_from_favorites">Xóa khỏi yêu thích</string>
+    <string name="start_reading">Bắt đầu đọc</string>
+    <string name="continue_reading">Tiếp tục đọc</string>
+    <string name="chapter_count">%d chương</string>
 
-    <!-- Genre names -->
-    <string name="genre_tien_hiep">Tiên Hiệp</string>
-    <string name="genre_vo_hiep">Võ Hiệp</string>
-    <string name="genre_huyen_huyen">Huyền Huyễn</string>
-    <string name="genre_ngon_tinh">Ngôn Tình</string>
-    <string name="genre_do_thi">Đô Thị</string>
-    <string name="genre_xuyen_khong">Xuyên Không</string>
-
-    <!-- Reading screen -->
-    <string name="chapter_list">Danh sách chương</string>
-    <string name="original_text">Nguyên bản</string>
-    <string name="translated_text">Bản dịch</string>
-    <string name="dual_language">Song ngữ</string>
-    <string name="next_chapter">Chương sau</string>
+    <!-- Reading -->
     <string name="previous_chapter">Chương trước</string>
+    <string name="next_chapter">Chương sau</string>
+    <string name="chapter_list">Danh sách chương</string>
     <string name="font_size">Cỡ chữ</string>
     <string name="background_color">Màu nền</string>
 
-    <!-- Chat screen -->
+    <!-- Search -->
+    <string name="search_hint">Nhập tên truyện, tác giả…</string>
+    <string name="filter">Lọc</string>
+    <string name="sort">Sắp xếp</string>
+    <string name="no_results">Không tìm thấy kết quả</string>
+
+    <!-- Bookshelf -->
+    <string name="favorites">Yêu thích</string>
+    <string name="history">Lịch sử đọc</string>
+    <string name="downloads">Đã tải</string>
+    <string name="empty_favorites">Bạn chưa có truyện yêu thích nào</string>
+    <string name="empty_history">Bạn chưa đọc truyện nào</string>
+    <string name="login_required">Vui lòng đăng nhập để sử dụng tính năng này</string>
+
+    <!-- AI Chat -->
     <string name="chat_with_ai">Trò chuyện với AI</string>
-    <string name="chat_placeholder">Hỏi về truyện Trung Quốc...</string>
+    <string name="type_message">Nhập tin nhắn…</string>
     <string name="send">Gửi</string>
-    <string name="new_chat">Cuộc trò chuyện mới</string>
-    <string name="chat_history">Lịch sử trò chuyện</string>
+
+    <!-- Error messages -->
+    <string name="error_login">Đăng nhập thất bại</string>
+    <string name="error_register">Đăng ký thất bại</string>
+    <string name="error_network">Lỗi kết nối mạng</string>
+    <string name="error_loading">Không thể tải dữ liệu</string>
+    <string name="error_translation">Lỗi khi dịch nội dung</string>
 </resources>

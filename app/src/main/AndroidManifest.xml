@@ -6,81 +6,53 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:name=".App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/app_logo"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/app_logo"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TangThuCac"
+        android:theme="@style/Theme.AppTruyenChu"
         tools:targetApi="31">
 
         <activity
-            android:name=".activity.SplashActivity"
+            android:name="com.jian.tangthucac.activities.SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.TangThuCac">
+            android:theme="@style/Theme.AppTruyenChu.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.MainActivity" />
-        <activity android:name=".activity.LoginActivity" />
-        <activity android:name=".activity.SignUpActivity" />
-        <activity android:name=".activity.StoryDetailActivity" />
-        <activity android:name=".activity.ChapterReaderActivity" />
-        <activity android:name=".activity.ChatActivity" />
-        <activity android:name=".activity.GenreStoriesActivity" />
-        <activity android:name=".activity.SearchActivity" />
-        <activity android:name=".activity.WikidichBrowserActivity" />
         <activity
-            android:name=".activity.ChineseNovelSearchActivity"
-            android:label="Tìm kiếm truyện Trung Quốc" />
-        <activity
-            android:name=".activity.ApiSettingsActivity"
-            android:label="Cài đặt API" />
-        <activity
-            android:name=".activity.MyTranslatedNovelsActivity"
-            android:label="Truyện đã dịch của tôi" />
-
-        <!-- Firebase auth activity for Google Sign In -->
-        <activity
-            android:name="com.google.firebase.auth.internal.GenericIdpActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="firebase.auth"
-                    android:path="/"
-                    android:scheme="genericidp" />
-            </intent-filter>
-        </activity>
-
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
-                android:value="androidx.startup"
-                tools:node="remove" />
-        </provider>
-
-        <!-- Khai báo worker -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
+            android:name="com.jian.tangthucac.activities.LoginActivity"
             android:exported="false" />
 
+        <activity
+            android:name="com.jian.tangthucac.activities.RegisterActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.jian.tangthucac.activities.MainActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.jian.tangthucac.activities.NovelDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.jian.tangthucac.activities.ReadNovelActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.jian.tangthucac.activities.SearchActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.jian.tangthucac.activities.AIChatActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

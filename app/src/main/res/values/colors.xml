@@ -1,73 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Màu cơ bản -->
+    <color name="primary">#3F51B5</color>
+    <color name="primary_dark">#303F9F</color>
+    <color name="primary_light">#C5CAE9</color>
+    <color name="accent">#FF4081</color>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#BDBDBD</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="lightGrey">#F1F1F1</color>
-    <color name="darkGrey">#444444</color>
-
-    <!-- Màu cũ để tương thích -->
-    <color name="colorPrimary">@color/primary</color>
-    <color name="colorPrimaryDark">@color/primary_dark</color>
-    <color name="colorAccent">@color/accent</color>
-    <color name="colorError">@color/error</color>
-
-    <!-- Màu chính - Theme sáng (Đỏ-Vàng Trung Hoa) -->
-    <color name="primary">#C62828</color>
-    <color name="primary_dark">#8E0000</color>
-    <color name="primary_light">#FFCDD2</color>
-    <color name="accent">#FFB300</color>
-    <color name="accent_dark">#C68400</color>
-
-    <!-- Màu nền - Theme sáng -->
-    <color name="background_light">#FFF8E1</color>
-    <color name="surface_light">#FFFFFF</color>
-    <color name="card_background_light">#FFFDE7</color>
-
-    <!-- Màu chữ - Theme sáng -->
-    <color name="text_primary_light">#212121</color>
-    <color name="text_secondary_light">#757575</color>
-    <color name="text_hint_light">#BDBDBD</color>
-
-    <!-- Màu chính - Theme tối (Đỏ-Vàng Trung Hoa tối) -->
-    <color name="primary_night">#D32F2F</color>
-    <color name="primary_dark_night">#B71C1C</color>
-    <color name="primary_light_night">#FFCDD2</color>
-    <color name="accent_night">#FFD54F</color>
-    <color name="accent_light_night">#FFE082</color>
-
-    <!-- Màu nền - Theme tối -->
-    <color name="background_dark">#121212</color>
-    <color name="surface_dark">#1E1E1E</color>
-    <color name="card_background_dark">#272727</color>
-
-    <!-- Màu chữ - Theme tối -->
-    <color name="text_primary_dark">#F5F5F5</color>
-    <color name="text_secondary_dark">#B0B0B0</color>
-    <color name="text_hint_dark">#616161</color>
-
-    <!-- Màu gợn sóng (ripple) -->
-    <color name="ripple_light">#33000000</color>
-    <color name="ripple_dark">#33FFFFFF</color>
-
-    <!-- Màu trạng thái -->
-    <color name="success">#4CAF50</color>
-    <color name="warning">#FFC107</color>
-    <color name="error">#F44336</color>
-    <color name="info">#2196F3</color>
-
-    <!-- Màu đặc biệt cho bottom navigation -->
-    <color name="bottom_nav_selected_light">@color/primary</color>
-    <color name="bottom_nav_unselected_light">#78909C</color>
-    <color name="bottom_nav_selected_dark">@color/primary_night</color>
-    <color name="bottom_nav_unselected_dark">#78909C</color>
-
-    <color name="warning_text">#D86018</color>
-
-    <!-- Màu cho truyện Trung Quốc -->
-    <color name="chinese_red">#E53935</color>
-    <color name="chinese_gold">#FFD700</color>
-    <color name="chinese_jade">#00A86B</color>
-    <color name="chinese_imperial">#602F6B</color>
-    <color name="chinese_paper">#F5EED6</color>
+    <color name="transparent">#00000000</color>
+    <color name="gray_light">#F5F5F5</color>
+    <color name="gray">#9E9E9E</color>
+    <color name="gray_dark">#616161</color>
+    <color name="background_light">#FAFAFA</color>
+    <color name="background_dark">#303030</color>
+    <color name="reading_background_light">#FFF8E1</color>
+    <color name="reading_background_dark">#212121</color>
+    <color name="reading_text_light">#212121</color>
+    <color name="reading_text_dark">#E0E0E0</color>
 </resources>
