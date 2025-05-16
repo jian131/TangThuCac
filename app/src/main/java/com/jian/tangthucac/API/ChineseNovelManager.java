@@ -3,8 +3,6 @@ package com.jian.tangthucac.API;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -16,9 +14,10 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.jian.tangthucac.model.OriginalStory;
+import com.jian.tangthucac.model.ChineseChapter;
+import com.jian.tangthucac.model.ChineseNovel;
+import com.jian.tangthucac.model.ChineseNovelStructure;
 import com.jian.tangthucac.model.SearchKeywordMap;
-import com.jian.tangthucac.model.TranslatedChapter;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -41,16 +40,14 @@ public class ChineseNovelManager {
     private static ChineseNovelManager instance;
 
     // Firebase references
-    private final DatabaseReference originalStoriesRef;
-    private final DatabaseReference translatedChaptersRef;
+    private final DatabaseReference chineseNovelsRef;
+    private final DatabaseReference chineseChaptersRef;
     private final DatabaseReference keywordMapsRef;
-    private final DatabaseReference searchKeywordsRef;
 
-    // Cache for stories and translations
-    private final Map<String, OriginalStory> storiesCache;
-    private final Map<String, TranslatedChapter> chaptersCache;
+    // Cache for novels and translations
+    private final Map<String, ChineseNovel> novelsCache;
+    private final Map<String, ChineseChapter> chaptersCache;
     private final Map<String, SearchKeywordMap> keywordCache;
-    private final Map<String, SearchKeywordMap> keywordsCache;
 
     // LRU cache cho tối ưu hiệu suất
     private final Map<String, Long> cacheAccessTime;
@@ -68,12 +65,12 @@ public class ChineseNovelManager {
 
     // Cache constants
     private static final String PREF_NAME = "chinese_novel_cache";
-    private static final String STORIES_CACHE_KEY = "stories_cache";
+    private static final String NOVELS_CACHE_KEY = "novels_cache";
     private static final String CHAPTERS_CACHE_KEY = "chapters_cache";
     private static final String KEYWORDS_CACHE_KEY = "keywords_cache";
 
     // Kích thước tối đa cho cache
-    private static final int MAX_STORY_CACHE_SIZE = 100;
+    private static final int MAX_NOVEL_CACHE_SIZE = 100;
     private static final int MAX_CHAPTER_CACHE_SIZE = 200;
     private static final int MAX_KEYWORD_CACHE_SIZE = 300;
 
@@ -81,18 +78,18 @@ public class ChineseNovelManager {
     private static final long CACHE_AUTO_SAVE_INTERVAL = 30 * 60 * 1000; // 30 phút
 
     // Interface for callbacks
-    public interface OnStoryLoadedListener {
-        void onStoryLoaded(OriginalStory story);
+    public interface OnNovelLoadedListener {
+        void onNovelLoaded(ChineseNovel novel);
         void onError(Exception e);
     }
 
-    public interface OnStoriesLoadedListener {
-        void onStoriesLoaded(List<OriginalStory> stories);
+    public interface OnNovelsLoadedListener {
+        void onNovelsLoaded(List<ChineseNovel> novels);
         void onError(Exception e);
     }
 
     public interface OnChapterLoadedListener {
-        void onChapterLoaded(TranslatedChapter chapter);
+        void onChapterLoaded(ChineseChapter chapter);
         void onError(Exception e);
     }
 
@@ -113,15 +110,13 @@ public class ChineseNovelManager {
 
     private ChineseNovelManager() {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        originalStoriesRef = database.getReference("chinese_novels");
-        translatedChaptersRef = database.getReference("translated_chapters");
-        keywordMapsRef = database.getReference("keyword_maps");
-        searchKeywordsRef = database.getReference("search_keywords");
+        chineseNovelsRef = database.getReference(ChineseNovelStructure.CHINESE_NOVELS);
+        chineseChaptersRef = database.getReference(ChineseNovelStructure.CHINESE_NOVEL_CHAPTERS);
+        keywordMapsRef = database.getReference("keyword_maps"); // Giữ lại từ phiên bản cũ
 
-        storiesCache = new HashMap<>();
+        novelsCache = new HashMap<>();
         chaptersCache = new HashMap<>();
         keywordCache = new HashMap<>();
-        keywordsCache = new HashMap<>();
         cacheAccessTime = new HashMap<>();
 
         gson = new Gson();
@@ -156,22 +151,22 @@ public class ChineseNovelManager {
     private void loadCacheFromPreferences() {
         executor.execute(() -> {
             try {
-                // Load stories cache
-                String storiesCacheJson = preferences.getString(STORIES_CACHE_KEY, null);
-                if (storiesCacheJson != null) {
-                    Type storiesMapType = new TypeToken<Map<String, OriginalStory>>(){}.getType();
-                    Map<String, OriginalStory> loadedStoriesCache = gson.fromJson(storiesCacheJson, storiesMapType);
-                    if (loadedStoriesCache != null) {
-                        storiesCache.putAll(loadedStoriesCache);
-                        Log.d(TAG, "Loaded " + storiesCache.size() + " stories from cache");
+                // Load novels cache
+                String novelsCacheJson = preferences.getString(NOVELS_CACHE_KEY, null);
+                if (novelsCacheJson != null) {
+                    Type novelsMapType = new TypeToken<Map<String, ChineseNovel>>(){}.getType();
+                    Map<String, ChineseNovel> loadedNovelsCache = gson.fromJson(novelsCacheJson, novelsMapType);
+                    if (loadedNovelsCache != null) {
+                        novelsCache.putAll(loadedNovelsCache);
+                        Log.d(TAG, "Loaded " + novelsCache.size() + " novels from cache");
                     }
                 }
 
                 // Load chapters cache
                 String chaptersCacheJson = preferences.getString(CHAPTERS_CACHE_KEY, null);
                 if (chaptersCacheJson != null) {
-                    Type chaptersMapType = new TypeToken<Map<String, TranslatedChapter>>(){}.getType();
-                    Map<String, TranslatedChapter> loadedChaptersCache = gson.fromJson(chaptersCacheJson, chaptersMapType);
+                    Type chaptersMapType = new TypeToken<Map<String, ChineseChapter>>(){}.getType();
+                    Map<String, ChineseChapter> loadedChaptersCache = gson.fromJson(chaptersCacheJson, chaptersMapType);
                     if (loadedChaptersCache != null) {
                         chaptersCache.putAll(loadedChaptersCache);
                         Log.d(TAG, "Loaded " + chaptersCache.size() + " chapters from cache");
@@ -191,8 +186,8 @@ public class ChineseNovelManager {
 
                 // Khởi tạo thời gian truy cập cache
                 long currentTime = System.currentTimeMillis();
-                for (String key : storiesCache.keySet()) {
-                    cacheAccessTime.put("story_" + key, currentTime);
+                for (String key : novelsCache.keySet()) {
+                    cacheAccessTime.put("novel_" + key, currentTime);
                 }
                 for (String key : chaptersCache.keySet()) {
                     cacheAccessTime.put("chapter_" + key, currentTime);
@@ -201,7 +196,7 @@ public class ChineseNovelManager {
                     cacheAccessTime.put("keyword_" + key, currentTime);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error loading cache: " + e.getMessage());
+                Log.e(TAG, "Error loading cache from preferences", e);
             }
         });
     }
@@ -210,18 +205,15 @@ public class ChineseNovelManager {
      * Lưu cache vào SharedPreferences
      */
     private void saveCacheToPreferences() {
-        if (preferences == null) return;
-
         executor.execute(() -> {
             try {
-                SharedPreferences.Editor editor = preferences.edit();
-
-                // Giới hạn kích thước cache trước khi lưu
                 trimCacheIfNeeded();
 
-                // Save stories cache
-                String storiesCacheJson = gson.toJson(storiesCache);
-                editor.putString(STORIES_CACHE_KEY, storiesCacheJson);
+                SharedPreferences.Editor editor = preferences.edit();
+
+                // Save novels cache
+                String novelsCacheJson = gson.toJson(novelsCache);
+                editor.putString(NOVELS_CACHE_KEY, novelsCacheJson);
 
                 // Save chapters cache
                 String chaptersCacheJson = gson.toJson(chaptersCache);
@@ -234,115 +226,108 @@ public class ChineseNovelManager {
                 editor.apply();
                 Log.d(TAG, "Cache saved to preferences");
             } catch (Exception e) {
-                Log.e(TAG, "Error saving cache: " + e.getMessage());
+                Log.e(TAG, "Error saving cache to preferences", e);
             }
         });
     }
 
     /**
-     * Giới hạn kích thước cache khi quá lớn
+     * Cắt giảm cache nếu vượt quá kích thước tối đa
      */
     private void trimCacheIfNeeded() {
-        // Giới hạn cache truyện
-        if (storiesCache.size() > MAX_STORY_CACHE_SIZE) {
-            List<Map.Entry<String, Long>> entries = new ArrayList<>();
-            for (String key : storiesCache.keySet()) {
-                entries.add(new HashMap.SimpleEntry<>(key, cacheAccessTime.getOrDefault("story_" + key, 0L)));
+        // Trim novels cache
+        if (novelsCache.size() > MAX_NOVEL_CACHE_SIZE) {
+            List<Map.Entry<String, Long>> novelEntries = new ArrayList<>();
+            for (String key : novelsCache.keySet()) {
+                Long accessTime = cacheAccessTime.get("novel_" + key);
+                if (accessTime != null) {
+                    novelEntries.add(new HashMap.SimpleEntry<>(key, accessTime));
+                }
             }
 
-            // Sắp xếp theo thời gian truy cập (LRU)
-            Collections.sort(entries, Comparator.comparingLong(Map.Entry::getValue));
+            // Sắp xếp theo thời gian truy cập (cũ nhất -> mới nhất)
+            Collections.sort(novelEntries, Comparator.comparing(Map.Entry::getValue));
 
             // Xóa các mục cũ nhất
-            int toRemove = storiesCache.size() - MAX_STORY_CACHE_SIZE;
-            for (int i = 0; i < toRemove; i++) {
-                String key = entries.get(i).getKey();
-                storiesCache.remove(key);
-                cacheAccessTime.remove("story_" + key);
+            int removeCount = novelsCache.size() - MAX_NOVEL_CACHE_SIZE;
+            for (int i = 0; i < removeCount; i++) {
+                String key = novelEntries.get(i).getKey();
+                novelsCache.remove(key);
+                cacheAccessTime.remove("novel_" + key);
             }
-
-            Log.d(TAG, "Trimmed story cache from " + (MAX_STORY_CACHE_SIZE + toRemove) + " to " + MAX_STORY_CACHE_SIZE);
+            Log.d(TAG, "Trimmed " + removeCount + " novels from cache");
         }
 
-        // Giới hạn cache chương
+        // Trim chapters cache
         if (chaptersCache.size() > MAX_CHAPTER_CACHE_SIZE) {
-            List<Map.Entry<String, Long>> entries = new ArrayList<>();
+            List<Map.Entry<String, Long>> chapterEntries = new ArrayList<>();
             for (String key : chaptersCache.keySet()) {
-                entries.add(new HashMap.SimpleEntry<>(key, cacheAccessTime.getOrDefault("chapter_" + key, 0L)));
+                Long accessTime = cacheAccessTime.get("chapter_" + key);
+                if (accessTime != null) {
+                    chapterEntries.add(new HashMap.SimpleEntry<>(key, accessTime));
+                }
             }
 
-            Collections.sort(entries, Comparator.comparingLong(Map.Entry::getValue));
+            Collections.sort(chapterEntries, Comparator.comparing(Map.Entry::getValue));
 
-            int toRemove = chaptersCache.size() - MAX_CHAPTER_CACHE_SIZE;
-            for (int i = 0; i < toRemove; i++) {
-                String key = entries.get(i).getKey();
+            int removeCount = chaptersCache.size() - MAX_CHAPTER_CACHE_SIZE;
+            for (int i = 0; i < removeCount; i++) {
+                String key = chapterEntries.get(i).getKey();
                 chaptersCache.remove(key);
                 cacheAccessTime.remove("chapter_" + key);
             }
-
-            Log.d(TAG, "Trimmed chapter cache from " + (MAX_CHAPTER_CACHE_SIZE + toRemove) + " to " + MAX_CHAPTER_CACHE_SIZE);
+            Log.d(TAG, "Trimmed " + removeCount + " chapters from cache");
         }
 
-        // Giới hạn cache từ khóa
+        // Trim keywords cache
         if (keywordCache.size() > MAX_KEYWORD_CACHE_SIZE) {
-            List<Map.Entry<String, Long>> entries = new ArrayList<>();
+            List<Map.Entry<String, Long>> keywordEntries = new ArrayList<>();
             for (String key : keywordCache.keySet()) {
-                entries.add(new HashMap.SimpleEntry<>(key, cacheAccessTime.getOrDefault("keyword_" + key, 0L)));
+                Long accessTime = cacheAccessTime.get("keyword_" + key);
+                if (accessTime != null) {
+                    keywordEntries.add(new HashMap.SimpleEntry<>(key, accessTime));
+                }
             }
 
-            Collections.sort(entries, Comparator.comparingLong(Map.Entry::getValue));
+            Collections.sort(keywordEntries, Comparator.comparing(Map.Entry::getValue));
 
-            int toRemove = keywordCache.size() - MAX_KEYWORD_CACHE_SIZE;
-            for (int i = 0; i < toRemove; i++) {
-                String key = entries.get(i).getKey();
+            int removeCount = keywordCache.size() - MAX_KEYWORD_CACHE_SIZE;
+            for (int i = 0; i < removeCount; i++) {
+                String key = keywordEntries.get(i).getKey();
                 keywordCache.remove(key);
                 cacheAccessTime.remove("keyword_" + key);
             }
-
-            Log.d(TAG, "Trimmed keyword cache from " + (MAX_KEYWORD_CACHE_SIZE + toRemove) + " to " + MAX_KEYWORD_CACHE_SIZE);
+            Log.d(TAG, "Trimmed " + removeCount + " keywords from cache");
         }
     }
 
     /**
-     * Lấy danh sách truyện từ Firebase với phân trang
-     * @param limit Số lượng truyện tối đa cần lấy
-     * @param lastStoryId ID truyện cuối cùng của trang trước (null nếu là trang đầu tiên)
+     * Lấy danh sách truyện Trung Quốc
      */
-    public void getOriginalStories(int limit, String lastStoryId, OnStoriesLoadedListener listener) {
-        Query query;
-        if (lastStoryId == null) {
-            // Trang đầu tiên
-            query = originalStoriesRef.orderByKey().limitToFirst(limit);
-        } else {
-            // Trang tiếp theo, bắt đầu sau lastStoryId
-            query = originalStoriesRef.orderByKey().startAfter(lastStoryId).limitToFirst(limit);
+    public void getChineseNovels(int limit, String lastNovelId, OnNovelsLoadedListener listener) {
+        Query query = chineseNovelsRef.orderByKey();
+        if (lastNovelId != null && !lastNovelId.isEmpty()) {
+            query = query.startAfter(lastNovelId);
         }
+        query = query.limitToFirst(limit);
 
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List<OriginalStory> stories = new ArrayList<>();
-                for (DataSnapshot storySnapshot : snapshot.getChildren()) {
-                    OriginalStory story = storySnapshot.getValue(OriginalStory.class);
-                    if (story != null) {
-                        story.setId(storySnapshot.getKey());
-                        stories.add(story);
+                List<ChineseNovel> novels = new ArrayList<>();
+                for (DataSnapshot novelSnapshot : snapshot.getChildren()) {
+                    ChineseNovel novel = novelSnapshot.getValue(ChineseNovel.class);
+                    if (novel != null) {
+                        novel.setId(novelSnapshot.getKey());
+                        novels.add(novel);
+
                         // Cập nhật cache
-                        storiesCache.put(story.getId(), story);
-                        cacheAccessTime.put("story_" + story.getId(), System.currentTimeMillis());
+                        novelsCache.put(novel.getId(), novel);
+                        cacheAccessTime.put("novel_" + novel.getId(), System.currentTimeMillis());
                     }
                 }
 
-                // Lên lịch lưu cache
-                if (!stories.isEmpty()) {
-                    scheduledExecutor.schedule(
-                        ChineseNovelManager.this::saveCacheToPreferences,
-                        5,
-                        TimeUnit.SECONDS
-                    );
-                }
-
-                listener.onStoriesLoaded(stories);
+                listener.onNovelsLoaded(novels);
             }
 
             @Override
@@ -353,45 +338,39 @@ public class ChineseNovelManager {
     }
 
     /**
-     * Phương thức wrapper cho khả năng tương thích
+     * Lấy tất cả truyện Trung Quốc
      */
-    public void getOriginalStories(OnStoriesLoadedListener listener) {
-        getOriginalStories(50, null, listener);
+    public void getChineseNovels(OnNovelsLoadedListener listener) {
+        getChineseNovels(100, null, listener);
     }
 
     /**
-     * Lấy thông tin truyện theo ID
+     * Lấy truyện theo ID
      */
-    public void getOriginalStoryById(String storyId, OnStoryLoadedListener listener) {
+    public void getChineseNovelById(String novelId, OnNovelLoadedListener listener) {
         // Kiểm tra cache trước
-        if (storiesCache.containsKey(storyId)) {
-            OriginalStory cachedStory = storiesCache.get(storyId);
-            cacheAccessTime.put("story_" + storyId, System.currentTimeMillis());
-            listener.onStoryLoaded(cachedStory);
+        if (novelsCache.containsKey(novelId)) {
+            ChineseNovel cachedNovel = novelsCache.get(novelId);
+            cacheAccessTime.put("novel_" + novelId, System.currentTimeMillis());
+            listener.onNovelLoaded(cachedNovel);
             return;
         }
 
         // Nếu không có trong cache, lấy từ Firebase
-        originalStoriesRef.child(storyId).addListenerForSingleValueEvent(new ValueEventListener() {
+        chineseNovelsRef.child(novelId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                OriginalStory story = snapshot.getValue(OriginalStory.class);
-                if (story != null) {
-                    story.setId(snapshot.getKey());
+                ChineseNovel novel = snapshot.getValue(ChineseNovel.class);
+                if (novel != null) {
+                    novel.setId(snapshot.getKey());
+
                     // Cập nhật cache
-                    storiesCache.put(story.getId(), story);
-                    cacheAccessTime.put("story_" + storyId, System.currentTimeMillis());
+                    novelsCache.put(novel.getId(), novel);
+                    cacheAccessTime.put("novel_" + novel.getId(), System.currentTimeMillis());
 
-                    // Lên lịch lưu cache
-                    scheduledExecutor.schedule(
-                        ChineseNovelManager.this::saveCacheToPreferences,
-                        5,
-                        TimeUnit.SECONDS
-                    );
-
-                    listener.onStoryLoaded(story);
+                    listener.onNovelLoaded(novel);
                 } else {
-                    listener.onError(new Exception("Story not found"));
+                    listener.onError(new Exception("Novel not found with ID: " + novelId));
                 }
             }
 
@@ -403,66 +382,52 @@ public class ChineseNovelManager {
     }
 
     /**
-     * Lưu truyện mới vào Firebase
+     * Lưu truyện Trung Quốc
      */
-    public void saveOriginalStory(OriginalStory story, OnStoryLoadedListener listener) {
-        if (story.getId() == null || story.getId().isEmpty()) {
-            // Tạo ID mới nếu chưa có
-            String newId = originalStoriesRef.push().getKey();
-            story.setId(newId);
+    public void saveChineseNovel(ChineseNovel novel, OnNovelLoadedListener listener) {
+        if (novel.getId() == null || novel.getId().isEmpty()) {
+            listener.onError(new Exception("Novel ID cannot be empty"));
+            return;
         }
 
-        originalStoriesRef.child(story.getId()).setValue(story)
+        chineseNovelsRef.child(novel.getId()).setValue(novel)
             .addOnSuccessListener(aVoid -> {
                 // Cập nhật cache
-                storiesCache.put(story.getId(), story);
-                cacheAccessTime.put("story_" + story.getId(), System.currentTimeMillis());
+                novelsCache.put(novel.getId(), novel);
+                cacheAccessTime.put("novel_" + novel.getId(), System.currentTimeMillis());
 
-                // Lên lịch lưu cache
-                scheduledExecutor.schedule(
-                    this::saveCacheToPreferences,
-                    5,
-                    TimeUnit.SECONDS
-                );
-
-                listener.onStoryLoaded(story);
+                listener.onNovelLoaded(novel);
             })
             .addOnFailureListener(e -> listener.onError(e));
     }
 
     /**
-     * Lấy chương đã dịch theo ID
+     * Lấy chương truyện theo ID
      */
-    public void getTranslatedChapter(String chapterId, OnChapterLoadedListener listener) {
+    public void getChineseChapter(String chapterId, OnChapterLoadedListener listener) {
         // Kiểm tra cache trước
         if (chaptersCache.containsKey(chapterId)) {
-            TranslatedChapter cachedChapter = chaptersCache.get(chapterId);
+            ChineseChapter cachedChapter = chaptersCache.get(chapterId);
             cacheAccessTime.put("chapter_" + chapterId, System.currentTimeMillis());
             listener.onChapterLoaded(cachedChapter);
             return;
         }
 
         // Nếu không có trong cache, lấy từ Firebase
-        translatedChaptersRef.child(chapterId).addListenerForSingleValueEvent(new ValueEventListener() {
+        chineseChaptersRef.child(chapterId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                TranslatedChapter chapter = snapshot.getValue(TranslatedChapter.class);
+                ChineseChapter chapter = snapshot.getValue(ChineseChapter.class);
                 if (chapter != null) {
                     chapter.setId(snapshot.getKey());
+
                     // Cập nhật cache
                     chaptersCache.put(chapter.getId(), chapter);
-                    cacheAccessTime.put("chapter_" + chapterId, System.currentTimeMillis());
-
-                    // Lên lịch lưu cache
-                    scheduledExecutor.schedule(
-                        ChineseNovelManager.this::saveCacheToPreferences,
-                        5,
-                        TimeUnit.SECONDS
-                    );
+                    cacheAccessTime.put("chapter_" + chapter.getId(), System.currentTimeMillis());
 
                     listener.onChapterLoaded(chapter);
                 } else {
-                    listener.onError(new Exception("Chapter not found"));
+                    listener.onError(new Exception("Chapter not found with ID: " + chapterId));
                 }
             }
 
@@ -474,27 +439,19 @@ public class ChineseNovelManager {
     }
 
     /**
-     * Lưu chương đã dịch vào Firebase
+     * Lưu chương truyện
      */
-    public void saveTranslatedChapter(TranslatedChapter chapter, OnChapterLoadedListener listener) {
+    public void saveChineseChapter(ChineseChapter chapter, OnChapterLoadedListener listener) {
         if (chapter.getId() == null || chapter.getId().isEmpty()) {
-            // Tạo ID mới nếu chưa có
-            String newId = translatedChaptersRef.push().getKey();
-            chapter.setId(newId);
+            listener.onError(new Exception("Chapter ID cannot be empty"));
+            return;
         }
 
-        translatedChaptersRef.child(chapter.getId()).setValue(chapter)
+        chineseChaptersRef.child(chapter.getId()).setValue(chapter)
             .addOnSuccessListener(aVoid -> {
                 // Cập nhật cache
                 chaptersCache.put(chapter.getId(), chapter);
                 cacheAccessTime.put("chapter_" + chapter.getId(), System.currentTimeMillis());
-
-                // Lên lịch lưu cache
-                scheduledExecutor.schedule(
-                    this::saveCacheToPreferences,
-                    5,
-                    TimeUnit.SECONDS
-                );
 
                 listener.onChapterLoaded(chapter);
             })
@@ -502,47 +459,124 @@ public class ChineseNovelManager {
     }
 
     /**
-     * Tìm ánh xạ từ khóa tiếng Việt sang tiếng Trung
+     * Tìm kiếm chương theo ID
      */
-    public void findKeywordMapping(String vietnameseKeyword, OnKeywordMappedListener listener) {
-        // Kiểm tra cache trước
-        for (SearchKeywordMap keywordMap : keywordCache.values()) {
-            if (keywordMap.getVietnameseKeyword().equalsIgnoreCase(vietnameseKeyword)) {
-                keywordMap.incrementUseCount();
-                listener.onKeywordMapped(keywordMap);
-                saveCacheToPreferences();
-                return;
-            }
-        }
+    public void getChapterById(String novelId, String chapterId, OnChapterLoadedListener listener) {
+        // Tạo ID đầy đủ cho chương
+        String fullChapterId = novelId + "_" + chapterId;
+        getChineseChapter(fullChapterId, listener);
+    }
 
-        // Nếu không có trong cache, tìm trong Firebase
-        keywordMapsRef.orderByChild("vietnameseKeyword").equalTo(vietnameseKeyword)
+    /**
+     * Lấy chương kế tiếp hoặc trước đó
+     */
+    public void getAdjacentChapter(String novelId, String currentChapterId, boolean isPrevious, OnChapterLoadedListener listener) {
+        getChineseNovelById(novelId, new OnNovelLoadedListener() {
+            @Override
+            public void onNovelLoaded(ChineseNovel novel) {
+                if (novel.getChapterIds() == null || novel.getChapterIds().isEmpty()) {
+                    listener.onError(new Exception("Novel has no chapters"));
+                    return;
+                }
+
+                List<String> chapterIds = novel.getChapterIds();
+                int currentIndex = -1;
+
+                // Tìm vị trí của chương hiện tại
+                for (int i = 0; i < chapterIds.size(); i++) {
+                    if (chapterIds.get(i).equals(currentChapterId)) {
+                        currentIndex = i;
+                        break;
+                    }
+                }
+
+                if (currentIndex == -1) {
+                    listener.onError(new Exception("Current chapter not found in novel"));
+                    return;
+                }
+
+                // Tính toán chương kế tiếp hoặc trước đó
+                int targetIndex = isPrevious ? currentIndex - 1 : currentIndex + 1;
+
+                // Kiểm tra giới hạn
+                if (targetIndex < 0 || targetIndex >= chapterIds.size()) {
+                    listener.onError(new Exception("No " + (isPrevious ? "previous" : "next") + " chapter available"));
+                    return;
+                }
+
+                // Lấy chương mục tiêu
+                String targetChapterId = chapterIds.get(targetIndex);
+                getChineseChapter(targetChapterId, listener);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                listener.onError(e);
+            }
+        });
+    }
+
+    /**
+     * Xóa tất cả cache
+     */
+    public void clearCache() {
+        novelsCache.clear();
+        chaptersCache.clear();
+        keywordCache.clear();
+        cacheAccessTime.clear();
+
+        // Xóa cache từ SharedPreferences
+        preferences.edit()
+            .remove(NOVELS_CACHE_KEY)
+            .remove(CHAPTERS_CACHE_KEY)
+            .remove(KEYWORDS_CACHE_KEY)
+            .apply();
+
+        Log.d(TAG, "Cache cleared");
+    }
+
+    /**
+     * Đóng và giải phóng tài nguyên
+     */
+    public void shutdown() {
+        saveCacheToPreferences();
+        scheduledExecutor.shutdown();
+        try {
+            if (!scheduledExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduledExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduledExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Tìm kiếm truyện Trung Quốc
+     */
+    public void searchChineseNovels(String keyword, int limit, OnNovelsLoadedListener listener) {
+        // Tìm kiếm theo từ khóa trong tựa đề hoặc mô tả
+        chineseNovelsRef.orderByChild(ChineseNovelStructure.NOVEL_TITLE_VI)
+            .startAt(keyword)
+            .endAt(keyword + "\uf8ff")
+            .limitToFirst(limit)
             .addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        for (DataSnapshot keywordSnapshot : snapshot.getChildren()) {
-                            SearchKeywordMap keywordMap = keywordSnapshot.getValue(SearchKeywordMap.class);
-                            if (keywordMap != null) {
-                                keywordMap.setId(keywordSnapshot.getKey());
-                                keywordMap.incrementUseCount();
+                    List<ChineseNovel> novels = new ArrayList<>();
+                    for (DataSnapshot novelSnapshot : snapshot.getChildren()) {
+                        ChineseNovel novel = novelSnapshot.getValue(ChineseNovel.class);
+                        if (novel != null) {
+                            novel.setId(novelSnapshot.getKey());
+                            novels.add(novel);
 
-                                // Cập nhật Firebase
-                                keywordMapsRef.child(keywordMap.getId()).child("useCount").setValue(keywordMap.getUseCount());
-                                keywordMapsRef.child(keywordMap.getId()).child("lastUsedTime").setValue(keywordMap.getLastUsedTime());
-
-                                // Cập nhật cache
-                                keywordCache.put(keywordMap.getId(), keywordMap);
-                                saveCacheToPreferences();
-
-                                listener.onKeywordMapped(keywordMap);
-                                return;
-                            }
+                            // Cập nhật cache
+                            novelsCache.put(novel.getId(), novel);
+                            cacheAccessTime.put("novel_" + novel.getId(), System.currentTimeMillis());
                         }
                     }
 
-                    // Không tìm thấy, báo lỗi
-                    listener.onError(new Exception("Keyword mapping not found"));
+                    listener.onNovelsLoaded(novels);
                 }
 
                 @Override
@@ -553,189 +587,56 @@ public class ChineseNovelManager {
     }
 
     /**
-     * Lưu ánh xạ từ khóa mới
+     * Lấy truyện theo thể loại
      */
-    public void saveKeywordMapping(SearchKeywordMap keywordMap, OnKeywordMappedListener listener) {
-        if (keywordMap.getId() == null || keywordMap.getId().isEmpty()) {
-            // Tạo ID mới nếu chưa có
-            String newId = keywordMapsRef.push().getKey();
-            keywordMap.setId(newId);
-        }
+    public void getNovelsByGenre(String genreId, OnNovelsLoadedListener listener) {
+        DatabaseReference novelsByGenreRef = FirebaseDatabase.getInstance()
+            .getReference(ChineseNovelStructure.CHINESE_NOVELS_BY_GENRE)
+            .child(genreId);
 
-        keywordMapsRef.child(keywordMap.getId()).setValue(keywordMap)
-            .addOnSuccessListener(aVoid -> {
-                // Cập nhật cache
-                keywordCache.put(keywordMap.getId(), keywordMap);
-                saveCacheToPreferences();
-
-                listener.onKeywordMapped(keywordMap);
-            })
-            .addOnFailureListener(e -> listener.onError(e));
-    }
-
-    /**
-     * Xóa cache
-     */
-    public void clearCache() {
-        storiesCache.clear();
-        chaptersCache.clear();
-        keywordCache.clear();
-        keywordsCache.clear();
-        if (preferences != null) {
-            preferences.edit().clear().apply();
-        }
-    }
-
-    /**
-     * Lấy thông tin chương theo ID
-     */
-    public void getChapterById(String storyId, String chapterId, OnChapterLoadedListener listener) {
-        // Check cache first
-        if (translatedChaptersRef != null) {
-            translatedChaptersRef
-                .child(storyId)
-                .child("chapters")
-                .child(chapterId)
-                .get()
-                .addOnSuccessListener(dataSnapshot -> {
-                    if (dataSnapshot.exists()) {
-                        TranslatedChapter chapter = dataSnapshot.getValue(TranslatedChapter.class);
-                        if (chapter != null) {
-                            // Đảm bảo chapter có ID
-                            chapter.setId(dataSnapshot.getKey());
-                            listener.onChapterLoaded(chapter);
-                        } else {
-                            listener.onError(new Exception("Không thể parse dữ liệu chương"));
-                        }
-                    } else {
-                        listener.onError(new Exception("Không tìm thấy chương"));
-                    }
-                })
-                .addOnFailureListener(e -> listener.onError(e));
-        } else {
-            listener.onError(new Exception("Firebase chưa được khởi tạo"));
-        }
-    }
-
-    /**
-     * Lấy chương liền kề (trước hoặc sau)
-     * @param isPrevious true để lấy chương trước, false để lấy chương sau
-     */
-    public void getAdjacentChapter(String storyId, String currentChapterId, boolean isPrevious, OnChapterLoadedListener listener) {
-        // Lấy danh sách chương của truyện
-        if (translatedChaptersRef != null) {
-            translatedChaptersRef
-                .child(storyId)
-                .child("chapters")
-                .orderByKey()
-                .get()
-                .addOnSuccessListener(dataSnapshot -> {
-                    if (dataSnapshot.exists()) {
-                        List<String> chapterIds = new ArrayList<>();
-                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                            chapterIds.add(snapshot.getKey());
-                        }
-
-                        // Tìm vị trí chương hiện tại
-                        int currentIndex = chapterIds.indexOf(currentChapterId);
-                        if (currentIndex == -1) {
-                            listener.onError(new Exception("Không tìm thấy chương hiện tại"));
-                            return;
-                        }
-
-                        // Tính vị trí chương mới
-                        int newIndex = isPrevious ? currentIndex - 1 : currentIndex + 1;
-                        if (newIndex < 0 || newIndex >= chapterIds.size()) {
-                            // Không có chương trước/sau
-                            listener.onChapterLoaded(null);
-                            return;
-                        }
-
-                        // Lấy thông tin chương mới
-                        String newChapterId = chapterIds.get(newIndex);
-                        getChapterById(storyId, newChapterId, listener);
-                    } else {
-                        listener.onError(new Exception("Không tìm thấy danh sách chương"));
-                    }
-                })
-                .addOnFailureListener(e -> listener.onError(e));
-        } else {
-            listener.onError(new Exception("Firebase chưa được khởi tạo"));
-        }
-    }
-
-    private void notifyEmptyState(EmptyStateListener listener) {
-        if (listener != null) {
-            listener.onEmptyState(true);
-        }
-    }
-
-    /**
-     * Lấy danh sách truyện đã dịch của người dùng
-     * @param userId ID của người dùng
-     * @param listener callback khi tải xong
-     */
-    public void getUserTranslatedNovels(String userId, OnStoriesLoadedListener listener) {
-        if (userId == null || userId.isEmpty()) {
-            listener.onError(new IllegalArgumentException("userId không được null hoặc rỗng"));
-            return;
-        }
-
-        if (FirebaseDatabase.getInstance() == null) {
-            FirebaseDatabase.getInstance();
-        }
-
-        DatabaseReference userTranslationsRef = FirebaseDatabase.getInstance().getReference("user_translations").child(userId);
-        userTranslationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        novelsByGenreRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                List<OriginalStory> userStories = new ArrayList<>();
-                List<String> storyIds = new ArrayList<>();
-
-                // Lấy danh sách ID truyện đã dịch
-                for (DataSnapshot storySnapshot : dataSnapshot.getChildren()) {
-                    String storyId = storySnapshot.getKey();
-                    if (storyId != null) {
-                        storyIds.add(storyId);
-                    }
-                }
-
-                if (storyIds.isEmpty()) {
-                    // Người dùng chưa có truyện nào đã dịch
-                    listener.onStoriesLoaded(userStories);
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    listener.onNovelsLoaded(new ArrayList<>());
                     return;
                 }
 
-                // Đếm số lượng truyện đã xử lý
-                final int[] storiesProcessed = {0};
-                final int totalStories = storyIds.size();
+                List<String> novelIds = new ArrayList<>();
+                for (DataSnapshot novelSnapshot : snapshot.getChildren()) {
+                    if (novelSnapshot.getValue(Boolean.class) == Boolean.TRUE) {
+                        novelIds.add(novelSnapshot.getKey());
+                    }
+                }
 
-                // Lấy thông tin chi tiết cho từng truyện
-                for (String storyId : storyIds) {
-                    getOriginalStoryById(storyId, new OnStoryLoadedListener() {
+                if (novelIds.isEmpty()) {
+                    listener.onNovelsLoaded(new ArrayList<>());
+                    return;
+                }
+
+                List<ChineseNovel> novels = new ArrayList<>();
+                final int[] completedCount = {0};
+                final int[] totalCount = {novelIds.size()};
+
+                for (String novelId : novelIds) {
+                    getChineseNovelById(novelId, new OnNovelLoadedListener() {
                         @Override
-                        public void onStoryLoaded(OriginalStory story) {
-                            // Cập nhật số lượng chương đã dịch
-                            if (dataSnapshot.child(storyId).hasChild("translatedChapters")) {
-                                int translatedCount = (int) dataSnapshot.child(storyId).child("translatedChapters").getChildrenCount();
-                                story.setTranslatedChaptersCount(translatedCount);
-                            }
-
-                            userStories.add(story);
+                        public void onNovelLoaded(ChineseNovel novel) {
+                            novels.add(novel);
+                            completedCount[0]++;
                             checkCompletion();
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            Log.e(TAG, "Error loading story " + storyId + ": " + e.getMessage());
+                            Log.e(TAG, "Error loading novel: " + e.getMessage());
+                            completedCount[0]++;
                             checkCompletion();
                         }
 
                         private void checkCompletion() {
-                            storiesProcessed[0]++;
-                            if (storiesProcessed[0] >= totalStories) {
-                                // Đã xử lý tất cả truyện
-                                listener.onStoriesLoaded(userStories);
+                            if (completedCount[0] >= totalCount[0]) {
+                                listener.onNovelsLoaded(novels);
                             }
                         }
                     });
@@ -743,132 +644,9 @@ public class ChineseNovelManager {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                listener.onError(databaseError.toException());
-            }
-        });
-    }
-
-    /**
-     * Xóa truyện khỏi danh sách đã dịch của người dùng
-     * @param userId ID của người dùng
-     * @param storyId ID của truyện cần xóa
-     * @param callback callback khi xong
-     */
-    public void removeUserTranslatedNovel(String userId, String storyId, FirebaseCallback<Boolean> callback) {
-        if (userId == null || userId.isEmpty() || storyId == null || storyId.isEmpty()) {
-            callback.onError(new IllegalArgumentException("userId và storyId không được null hoặc rỗng"));
-            return;
-        }
-
-        if (FirebaseDatabase.getInstance() == null) {
-            FirebaseDatabase.getInstance();
-        }
-
-        DatabaseReference userStoryRef = FirebaseDatabase.getInstance().getReference("user_translations")
-                .child(userId)
-                .child(storyId);
-
-        userStoryRef.removeValue()
-                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
-                .addOnFailureListener(e -> callback.onError(e));
-    }
-
-    /**
-     * Đóng manager và giải phóng tài nguyên
-     */
-    public void shutdown() {
-        // Lưu cache trước khi đóng
-        saveCacheToPreferences();
-
-        // Dừng executor đã lên lịch
-        scheduledExecutor.shutdown();
-        try {
-            if (!scheduledExecutor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-                scheduledExecutor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            scheduledExecutor.shutdownNow();
-        }
-    }
-
-    /**
-     * Nhận kết quả có phân trang khi tìm kiếm truyện
-     */
-    public void searchChineseNovels(String keyword, int limit, String lastStoryId, OnStoriesLoadedListener listener) {
-        // Tạo query với phân trang
-        Query query;
-        if (lastStoryId == null) {
-            // Trang đầu tiên
-            query = originalStoriesRef.orderByChild("title").startAt(keyword).endAt(keyword + "\uf8ff").limitToFirst(limit);
-        } else {
-            // Trang tiếp theo
-            query = originalStoriesRef.orderByChild("title").startAt(keyword).endAt(keyword + "\uf8ff")
-                    .startAfter(lastStoryId).limitToFirst(limit);
-        }
-
-        query.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List<OriginalStory> stories = new ArrayList<>();
-                for (DataSnapshot storySnapshot : snapshot.getChildren()) {
-                    OriginalStory story = storySnapshot.getValue(OriginalStory.class);
-                    if (story != null) {
-                        story.setId(storySnapshot.getKey());
-                        stories.add(story);
-                        // Cập nhật cache
-                        storiesCache.put(story.getId(), story);
-                        cacheAccessTime.put("story_" + story.getId(), System.currentTimeMillis());
-                    }
-                }
-
-                if (!stories.isEmpty()) {
-                    scheduledExecutor.schedule(
-                        ChineseNovelManager.this::saveCacheToPreferences,
-                        5,
-                        TimeUnit.SECONDS
-                    );
-                }
-
-                listener.onStoriesLoaded(stories);
-            }
-
-            @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 listener.onError(error.toException());
             }
         });
-    }
-
-    /**
-     * Lưu từ khóa tìm kiếm mới
-     */
-    public void saveSearchKeyword(SearchKeywordMap keywordMap) {
-        if (keywordMap == null) return;
-
-        try {
-            // Tạo ID nếu chưa có
-            if (keywordMap.getId() == null || keywordMap.getId().isEmpty()) {
-                keywordMap.setId(searchKeywordsRef.push().getKey());
-            }
-
-            // Lưu vào Firebase và cache
-            searchKeywordsRef.child(keywordMap.getId()).setValue(keywordMap);
-            keywordsCache.put(keywordMap.getId(), keywordMap);
-
-            // Cập nhật thời gian truy cập cache
-            cacheAccessTime.put("keyword_" + keywordMap.getId(), System.currentTimeMillis());
-
-            // Lên lịch lưu cache
-            scheduledExecutor.schedule(
-                this::saveCacheToPreferences,
-                5,
-                TimeUnit.SECONDS
-            );
-
-            Log.d(TAG, "Đã lưu từ khóa tìm kiếm: " + keywordMap.getVietnameseKeyword() + " -> " + keywordMap.getChineseKeyword());
-        } catch (Exception e) {
-            Log.e(TAG, "Lỗi khi lưu từ khóa tìm kiếm: " + e.getMessage());
-        }
     }
 }

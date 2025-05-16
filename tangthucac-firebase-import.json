@@ -57,7 +57,8 @@
       "updateTime": 1715123456789,
       "views": 382749,
       "translatedChaptersCount": 10,
-      "hot": true
+      "hot": true,
+      "chapterIds": ["novel1_chapter1", "novel1_chapter2"]
     },
     "novel2": {
       "id": "novel2",
@@ -77,7 +78,8 @@
       "updateTime": 1710123456789,
       "views": 296548,
       "translatedChaptersCount": 8,
-      "hot": true
+      "hot": true,
+      "chapterIds": ["novel2_chapter1"]
     },
     "novel3": {
       "id": "novel3",
@@ -97,7 +99,8 @@
       "updateTime": 1708123456789,
       "views": 214635,
       "translatedChaptersCount": 5,
-      "hot": true
+      "hot": true,
+      "chapterIds": []
     },
     "novel4": {
       "id": "novel4",
@@ -117,7 +120,8 @@
       "updateTime": 1714123456789,
       "views": 168924,
       "translatedChaptersCount": 3,
-      "hot": false
+      "hot": false,
+      "chapterIds": []
     },
     "novel5": {
       "id": "novel5",
@@ -137,7 +141,8 @@
       "updateTime": 1713123456789,
       "views": 122587,
       "translatedChaptersCount": 2,
-      "hot": true
+      "hot": true,
+      "chapterIds": []
     }
   },
   "chinese_novel_chapters": {
@@ -190,7 +195,7 @@
       "name": "Tiên Hiệp",
       "description": "Thể loại tiên, tiên hiệp kể về quá trình tu luyện và khám phá thế giới tu tiên thần kỳ.",
       "imageUrl": "https://i.imgur.com/RJLHaPG.jpg",
-      "count": 3
+      "count": 4
     },
     "vo_hiep": {
       "id": "vo_hiep",
@@ -204,7 +209,7 @@
       "name": "Huyền Huyễn",
       "description": "Thể loại kỳ ảo, huyền bí, phép thuật trong một thế giới không có thực.",
       "imageUrl": "https://i.imgur.com/8s8Vv5K.jpg",
-      "count": 2
+      "count": 3
     },
     "ngon_tinh": {
       "id": "ngon_tinh",
@@ -240,7 +245,8 @@
     },
     "huyen_huyen": {
       "novel1": true,
-      "novel2": true
+      "novel2": true,
+      "novel4": true
     }
   },
   "chinese_novels_by_author": {
@@ -290,6 +296,25 @@
             "sender": "ai",
             "content": "Dựa vào sở thích của bạn, tôi gợi ý những bộ truyện tiên hiệp sau:\n\n1. **Đấu La Đại Lục** của Đường Gia Tam Thiếu - Đường Tam rất thông minh và có khả năng tận dụng tri thức từ kiếp trước để phát triển.\n\n2. **Đấu Phá Thương Khung** của Thiên Tằm Thổ Đậu - Tiêu Viêm là một nhân vật chính kiên trì và thông minh.\n\n3. **Vũ Động Càn Khôn** - Lâm Động có trí tuệ và ý chí mạnh mẽ.\n\nBạn muốn biết thêm chi tiết về bộ truyện nào?",
             "timestamp": 1715123456795
+          }
+        ]
+      },
+      "chat2": {
+        "id": "chat2",
+        "title": "Giải thích thuật ngữ tu tiên",
+        "createdAt": 1715123556789,
+        "messages": [
+          {
+            "id": "msg1",
+            "sender": "user",
+            "content": "Tôi không hiểu các thuật ngữ tu tiên như Nguyên Anh, Hóa Thần là gì, bạn có thể giải thích không?",
+            "timestamp": 1715123556790
+          },
+          {
+            "id": "msg2",
+            "sender": "ai",
+            "content": "Trong truyện tu tiên, các cảnh giới tu luyện thường được phân chia như sau:\n\n1. **Luyện Khí** - Cảnh giới đầu tiên, tu luyện giả tích tụ linh khí trong cơ thể.\n\n2. **Trúc Cơ** - Hình thành nền tảng tu luyện vững chắc.\n\n3. **Kim Đan** - Ngưng tụ linh khí thành Đan.\n\n4. **Nguyên Anh** - Tạo ra một bản thể linh hồn có thể rời khỏi cơ thể.\n\n5. **Hóa Thần** - Linh hồn chuyển hóa thành thần thức mạnh mẽ hơn.\n\n6. **Luyện Hư** hoặc **Hợp Thể** - Tu luyện giả có thể điều khiển không gian.\n\n7. **Đại Thừa** - Cảnh giới gần với thần tiên.\n\n8. **Độ Kiếp** - Vượt qua thiên kiếp để thành tiên.\n\n9. **Tiên** - Đạt được cảnh giới bất tử.\n\nMỗi tác giả có thể có hệ thống cảnh giới riêng với tên gọi khác nhau, nhưng thường theo trình tự tương tự.",
+            "timestamp": 1715123556795
           }
         ]
       }
