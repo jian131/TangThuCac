@@ -95,3 +95,117 @@ Mỗi chương sẽ hiển thị cả phiên bản tiếng Trung và tiếng Vi�
 ---
 
 Cảm ơn bạn đã sử dụng ứng dụng TangThuCac. Nếu có bất kỳ câu hỏi hoặc gặp vấn đề nào, vui lòng liên hệ chúng tôi qua mục "Phản hồi" trong ứng dụng.
+
+# Hướng dẫn import dữ liệu truyện Trung Quốc vào Firebase
+
+Tài liệu này hướng dẫn cách import dữ liệu truyện Trung Quốc từ file `tangthucac-firebase-import.json` vào Firebase Realtime Database.
+
+## 1. Chuẩn bị
+
+### Yêu cầu:
+
+- Đã tạo project Firebase và thiết lập Realtime Database
+- Đã đăng nhập vào Firebase Console
+- Đã tải file `tangthucac-firebase-import.json`
+
+## 2. Import dữ liệu vào Firebase
+
+### Cách 1: Import qua Firebase Console
+
+1. Truy cập Firebase Console: https://console.firebase.google.com/
+2. Chọn project của bạn
+3. Trong menu bên trái, chọn "Realtime Database"
+4. Nhấp vào "⋮" (ba chấm) ở góc phải và chọn "Import JSON"
+5. Chọn file `tangthucac-firebase-import.json` và nhấp "Import"
+
+### Cách 2: Sử dụng Firebase Admin SDK (Node.js)
+
+1. Cài đặt Firebase Admin SDK:
+
+```bash
+npm install firebase-admin
+```
+
+2. Tạo file `import.js` với nội dung sau:
+
+```javascript
+const admin = require("firebase-admin");
+const fs = require("fs");
+
+// Khởi tạo ứng dụng với thông tin service account
+const serviceAccount = require("./path-to-your-service-account.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://your-project-id-default-rtdb.firebaseio.com",
+});
+
+// Đọc file JSON
+const data = JSON.parse(
+  fs.readFileSync("./tangthucac-firebase-import.json", "utf8")
+);
+
+// Import dữ liệu vào database
+const db = admin.database();
+const ref = db.ref("/");
+
+ref
+  .set(data)
+  .then(() => {
+    console.log("Dữ liệu đã được import thành công!");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("Lỗi khi import dữ liệu:", error);
+    process.exit(1);
+  });
+```
+
+3. Thay thế `path-to-your-service-account.json` và `your-project-id` với thông tin từ project của bạn
+4. Chạy script:
+
+```bash
+node import.js
+```
+
+## 3. Cấu trúc dữ liệu
+
+File JSON import chứa các node chính sau:
+
+- `Users`: Thông tin người dùng
+- `chinese_novels`: Danh sách truyện Trung Quốc
+- `chinese_novel_chapters`: Nội dung các chương
+- `chinese_genres`: Danh sách thể loại
+- `chinese_novels_by_genre`: Phân loại truyện theo thể loại
+- `chinese_novels_by_author`: Phân loại truyện theo tác giả
+- `featured_chinese_novels`: Danh sách truyện nổi bật
+- `ai_chat_histories`: Lịch sử trò chuyện với AI
+
+## 4. Hướng dẫn sử dụng trong ứng dụng
+
+Sau khi import dữ liệu, ứng dụng Android sẽ truy cập dữ liệu thông qua các đường dẫn tương ứng. Cấu trúc đường dẫn được định nghĩa trong class `ChineseNovelStructure.java`.
+
+Ví dụ:
+
+- Lấy danh sách truyện: `chinese_novels`
+- Lấy truyện theo ID: `chinese_novels/{novelId}`
+- Lấy chương theo ID: `chinese_novel_chapters/{chapterId}`
+
+## 5. Lưu ý quan trọng
+
+- Đảm bảo thiết lập quy tắc bảo mật (Security Rules) phù hợp cho database
+- Nên sao lưu dữ liệu hiện có trước khi import dữ liệu mới
+- File JSON import đã được tối ưu cho cấu trúc mới, tập trung vào truyện Trung Quốc và AI chat
+
+## 6. Xử lý lỗi
+
+Nếu gặp lỗi khi import, kiểm tra:
+
+- Kích thước file (Firebase có giới hạn import 256MB)
+- Định dạng JSON hợp lệ
+- Quyền truy cập vào database
+
+Nếu cần hỗ trợ thêm, vui lòng tham khảo tài liệu Firebase: https://firebase.google.com/docs/database
+
+---
+
+© Tầng Thư Các - Ứng dụng đọc truyện Trung Quốc

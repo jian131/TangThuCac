@@ -12,29 +12,29 @@
     <color name="colorAccent">@color/accent</color>
     <color name="colorError">@color/error</color>
 
-    <!-- Màu chính - Theme sáng -->
-    <color name="primary">#2196F3</color>
-    <color name="primary_dark">#1976D2</color>
-    <color name="primary_light">#BBDEFB</color>
-    <color name="accent">#FF4081</color>
-    <color name="accent_dark">#C2185B</color>
+    <!-- Màu chính - Theme sáng (Đỏ-Vàng Trung Hoa) -->
+    <color name="primary">#C62828</color>
+    <color name="primary_dark">#8E0000</color>
+    <color name="primary_light">#FFCDD2</color>
+    <color name="accent">#FFB300</color>
+    <color name="accent_dark">#C68400</color>
 
     <!-- Màu nền - Theme sáng -->
-    <color name="background_light">#F5F7FA</color>
+    <color name="background_light">#FFF8E1</color>
     <color name="surface_light">#FFFFFF</color>
-    <color name="card_background_light">#FFFFFF</color>
+    <color name="card_background_light">#FFFDE7</color>
 
     <!-- Màu chữ - Theme sáng -->
     <color name="text_primary_light">#212121</color>
     <color name="text_secondary_light">#757575</color>
     <color name="text_hint_light">#BDBDBD</color>
 
-    <!-- Màu chính - Theme tối -->
-    <color name="primary_night">#42A5F5</color>
-    <color name="primary_dark_night">#0D47A1</color>
-    <color name="primary_light_night">#90CAF9</color>
-    <color name="accent_night">#FF80AB</color>
-    <color name="accent_light_night">#FF80AB</color>
+    <!-- Màu chính - Theme tối (Đỏ-Vàng Trung Hoa tối) -->
+    <color name="primary_night">#D32F2F</color>
+    <color name="primary_dark_night">#B71C1C</color>
+    <color name="primary_light_night">#FFCDD2</color>
+    <color name="accent_night">#FFD54F</color>
+    <color name="accent_light_night">#FFE082</color>
 
     <!-- Màu nền - Theme tối -->
     <color name="background_dark">#121212</color>
@@ -63,4 +63,11 @@
     <color name="bottom_nav_unselected_dark">#78909C</color>
 
     <color name="warning_text">#D86018</color>
+
+    <!-- Màu cho truyện Trung Quốc -->
+    <color name="chinese_red">#E53935</color>
+    <color name="chinese_gold">#FFD700</color>
+    <color name="chinese_jade">#00A86B</color>
+    <color name="chinese_imperial">#602F6B</color>
+    <color name="chinese_paper">#F5EED6</color>
 </resources>

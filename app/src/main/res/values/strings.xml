@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Tầng Thư Các</string>
+    <string name="app_description">Thế giới truyện Trung Quốc</string>
     <string name="home">Trang chủ</string>
     <string name="library">Thư viện</string>
     <string name="discover">Khám phá</string>
@@ -10,7 +11,7 @@
     <string name="register">Đăng ký</string>
     <string name="email">Email</string>
     <string name="password">Mật khẩu</string>
-    <string name="search_hint">Tìm kiếm truyện...</string>
+    <string name="search_hint">Tìm kiếm truyện Trung Quốc...</string>
     <string name="favorite">Yêu thích</string>
     <string name="read">Đọc truyện</string>
     <string name="listen">Nghe đọc</string>
@@ -20,5 +21,37 @@
     <string name="navigation_library">Thư viện</string>
     <string name="navigation_genres">Thể loại</string>
     <string name="navigation_user">Cá nhân</string>
+    <string name="navigation_chat">AI Chat</string>
 
+    <!-- Chinese Novel specific -->
+    <string name="chinese_novels">Truyện Trung Quốc</string>
+    <string name="popular_chinese_novels">Truyện Trung nổi bật</string>
+    <string name="latest_chinese_novels">Truyện Trung mới nhất</string>
+    <string name="completed_chinese_novels">Truyện Trung đã hoàn thành</string>
+    <string name="recommended_chinese_novels">Đề xuất cho bạn</string>
+
+    <!-- Genre names -->
+    <string name="genre_tien_hiep">Tiên Hiệp</string>
+    <string name="genre_vo_hiep">Võ Hiệp</string>
+    <string name="genre_huyen_huyen">Huyền Huyễn</string>
+    <string name="genre_ngon_tinh">Ngôn Tình</string>
+    <string name="genre_do_thi">Đô Thị</string>
+    <string name="genre_xuyen_khong">Xuyên Không</string>
+
+    <!-- Reading screen -->
+    <string name="chapter_list">Danh sách chương</string>
+    <string name="original_text">Nguyên bản</string>
+    <string name="translated_text">Bản dịch</string>
+    <string name="dual_language">Song ngữ</string>
+    <string name="next_chapter">Chương sau</string>
+    <string name="previous_chapter">Chương trước</string>
+    <string name="font_size">Cỡ chữ</string>
+    <string name="background_color">Màu nền</string>
+
+    <!-- Chat screen -->
+    <string name="chat_with_ai">Trò chuyện với AI</string>
+    <string name="chat_placeholder">Hỏi về truyện Trung Quốc...</string>
+    <string name="send">Gửi</string>
+    <string name="new_chat">Cuộc trò chuyện mới</string>
+    <string name="chat_history">Lịch sử trò chuyện</string>
 </resources>
